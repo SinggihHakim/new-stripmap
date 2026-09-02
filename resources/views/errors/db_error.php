@@ -28,12 +28,12 @@
         <?php endif; ?>
 
         <p class="text-sm text-gray-500 mb-6">
-            Jalankan installer untuk membuat database dan tabel secara otomatis.
+            Sistem tidak dapat terhubung ke server database. Silakan pastikan server database aktif dan periksa kredensial di file <code class="px-1.5 py-0.5 bg-gray-100 rounded text-gray-700 font-mono text-xs">.env</code>.
         </p>
-        <a href="<?= rtrim($_ENV['APP_URL'] ?? '', '/') ?>/install.php"
-           class="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-sm">
-            Jalankan Installer
-        </a>
+        <button onclick="window.location.reload()"
+           class="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-sm cursor-pointer">
+            Muat Ulang Halaman
+        </button>
     </div>
 </body>
 </html>

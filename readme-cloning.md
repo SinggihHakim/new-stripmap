@@ -1,286 +1,228 @@
-﻿# 🚀 Panduan Cloning & Setup Project — BMBK Stripmap
+# 🚀 Panduan Setup, Hosting & Production Deployment — BMBK Stripmap
 
-Panduan lengkap untuk menjalankan project **Sistem Informasi Strip Map BMBK** dari nol di mesin lokal.
+Dokumentasi lengkap untuk menjalankan project **Sistem Informasi Strip Map & Prediksi Kondisi Jalan BMBK Provinsi Lampung** di lingkungan **Local Development** maupun proses deployment ke **Production Server (Shared Hosting / cPanel & VPS Linux)**.
+
+🔗 **Akses Production / Live URL:** [https://stripmap.bmbklampung.com/](https://stripmap.bmbklampung.com/)
 
 ---
 
-## ✅ Prerequisites (Software yang Harus Terinstall)
+## 📌 Sekilas Tentang Sistem
+Aplikasi ini dibangun menggunakan arsitektur **Native PHP (MVC Pattern)** tanpa dependensi Composer yang rumit. Sistem mengelola data jalan provinsi dengan fitur utama:
+- **Dashboard Eksekutif**: Ringkasan kemantapan jalan (Baik, Sedang, Rusak Ringan, Rusak Berat), jenis perkerasan, dan statistik per koridor.
+- **Manajemen Ruas Jalan & GIS**: Master data ruas jalan provinsi, STA awal/akhir, koridor, kabupaten/kota, pemetaan koordinat, dan impor polyline rute KML/KMZ.
+- **Visualisasi Strip Map Interaktif**: Diagram strip map per segmen 100m, komparasi kondisi vs perkerasan jalan, dan dokumentasi foto lapangan per STA.
+- **Prediksi Kondisi Jalan (Ide Strip Map)**: Simulasi otomatis kondisi jalan pasca-penanganan kumulatif per tahun anggaran, perbandingan baseline vs target penanganan, serta perhitungan selisih/gap kemantapan.
+- **Rekapitulasi & Export**: Rekap kemantapan dan jenis perkerasan per ruas jalan dengan filter koridor, serta modul export dan cetak laporan.
 
-Sebelum mulai, pastikan software berikut sudah terinstall di komputer kamu:
+---
 
-| Software | Versi Minimal | Download |
+## ✅ Prerequisites (Kebutuhan Server)
+
+| Kebutuhan | Versi Minimal | Keterangan |
 |---|---|---|
-| **PHP** | 8.0+ | https://www.php.net/downloads |
-| **MySQL / MariaDB** | 5.7+ / 10.4+ | Termasuk dalam paket Laragon/XAMPP |
-| **Web Server (Apache)** | — | Termasuk dalam paket Laragon/XAMPP |
-| **Git** | — | https://git-scm.com/downloads |
-| **Laragon** *(rekomendasi)* | Terbaru | https://laragon.org/download |
-
-> **Rekomendasi:** Gunakan **Laragon** sebagai local development environment karena paling mudah disetup di Windows dan sudah bundel PHP + MySQL + Apache.
+| **PHP** | 8.0+ (disarankan 8.1 / 8.2) | Backend runtime |
+| **MySQL / MariaDB** | 5.7+ / 10.4+ | Database server |
+| **Web Server** | Apache (dengan `mod_rewrite`) / Nginx | Server web |
+| **PHP Extensions** | `pdo_mysql`, `zip`, `fileinfo`, `mbstring`, `simplexml` | Harus aktif di `php.ini` |
 
 ---
 
-## 📋 PHP Extensions yang Harus Aktif
+# 💻 BAGIAN 1: Setup di Local Development (Laragon / XAMPP)
 
-Cek dan aktifkan extension berikut di `php.ini`:
+### 1. Clone atau Ekstrak Project
+Tempatkan project di folder web server lokal:
+- **Laragon**: `C:\laragon\www\bmbk-stripmap`
+- **XAMPP**: `C:\xampp\htdocs\bmbk-stripmap`
 
-```ini
-extension=pdo_mysql    ; Koneksi database (wajib)
-extension=zip          ; Parsing file Excel .xlsx (wajib untuk import)
-extension=fileinfo     ; Validasi tipe file upload (wajib untuk import)
-extension=mbstring     ; Encoding string (biasanya sudah aktif)
-```
-
-**Cara cek di Laragon:**
-- Klik kanan icon Laragon di taskbar → **PHP** → **php.ini**
-- Cari baris extension di atas, hapus tanda `;` di depannya jika ada
-- Restart Laragon setelah simpan
-
----
-
-## 🪜 Langkah-langkah Setup
-
-### Step 1 — Clone Repository
-
-Buka terminal / Git Bash, lalu jalankan:
-
-```bash
-# Clone ke folder web server Laragon
-cd C:\laragon\www
-
-git clone https://github.com/username/bmbk-stripmap.git
-```
-
-> Ganti `https://github.com/username/bmbk-stripmap.git` dengan URL repository yang sebenarnya.
-
-Atau jika kamu dapat file ZIP:
-```bash
-# Ekstrak ZIP ke folder:
-C:\laragon\www\bmbk-stripmap\
-```
-
----
-
-### Step 2 — Buat File `.env`
-
-File `.env` **tidak disertakan** di repository (sengaja di-gitignore). Kamu harus membuatnya secara manual.
-
-Buat file baru bernama `.env` di root project (`C:\laragon\www\bmbk-stripmap\.env`) dengan isi:
-
+### 2. Buat File `.env`
+Salin atau buat file `.env` di root project (`bmbk-stripmap/.env`):
 ```env
 APP_NAME='Stripmap - BMBK'
 APP_URL=http://localhost/bmbk-stripmap/public/
-APP_DEBUG=false
+APP_DEBUG=true
 APP_TIMEZONE=Asia/Jakarta
 
 DB_HOST=localhost
 DB_PORT=3306
 DB_NAME=stripmap_db
 DB_USER=root
-DB_PASS=password_mysql_kamu
+DB_PASS=
 ```
+> **Catatan:** File `config/database.php` sudah otomatis membaca data dari `.env`. Kamu tidak perlu mengedit file PHP lagi.
 
-> **Penting:** Sesuaikan `DB_PASS` dengan password MySQL lokal kamu. Jika menggunakan Laragon default, password biasanya kosong `""` atau `root`.
+### 3. Eksekusi Schema Database
+1. Buka phpMyAdmin (`http://localhost/phpmyadmin`) → klik tab **SQL**.
+2. Copy-paste seluruh isi file [`database/schema.sql`](database/schema.sql) lalu klik **Go**.
+3. Database `stripmap_db` beserta seluruh tabel, index, dan relasi langsung terbentuk otomatis.
 
----
-
-### Step 3 — Sesuaikan Konfigurasi Database
-
-Edit file `config/database.php` sesuai MySQL lokal kamu:
-
-```php
-return [
-    'host'    => 'localhost',
-    'port'    => 3306,
-    'dbname'  => 'stripmap_db',
-    'user'    => 'root',
-    'pass'    => 'password_mysql_kamu',   // <-- sesuaikan ini
-    'charset' => 'utf8mb4',
-];
-```
-
----
-
-### Step 4 — Buat Database & Import Schema
-
-**Cara A — via phpMyAdmin (Rekomendasi untuk pemula):**
-
-1. Buka browser → `http://localhost/phpmyadmin`
-2. Klik tab **SQL**
-3. Copy-paste seluruh isi file `database/schema.sql`
-4. Klik **Go / Execute**
-
-**Cara B — via MySQL CLI:**
-
-```bash
-# Masuk ke MySQL
-mysql -u root -p
-
-# Jalankan schema
-source C:/laragon/www/bmbk-stripmap/database/schema.sql
-```
-
----
-
-### Step 5 — Import Data Contoh (Opsional)
-
-Jika ingin langsung ada data untuk testing:
-
-**Via phpMyAdmin:**
-1. Pilih database `stripmap_db`
-2. Tab **SQL** → Copy-paste isi `database/seeder.sql` → Execute
-
-**Via MySQL CLI:**
-```bash
-source C:/laragon\www\bmbk-stripmap\database\seeder.sql
-```
-
----
-
-### Step 6 — Start Web Server
-
-**Dengan Laragon:**
-- Klik **Start All** di Laragon
-
-**Dengan XAMPP:**
-- Start **Apache** dan **MySQL** dari XAMPP Control Panel
-
----
-
-### Step 7 — Buka di Browser
-
+### 4. Buka di Browser
+Pastikan web server aktif, lalu buka:
 ```
 http://localhost/bmbk-stripmap/public/
 ```
 
-Jika berhasil, kamu akan melihat halaman **Dashboard** dengan tampilan ringkasan kondisi jalan.
+---
+
+# 🌐 BAGIAN 2: Deployment ke Production Server
+
+Aplikasi ini **100% siap untuk production** karena:
+1. **Zero-Build**: Tidak memerlukan `npm run build` atau `composer install` di server.
+2. **Environment-Based Config**: Cukup ubah kredensial di file `.env` tanpa mengubah kode aplikasi.
+3. **Frontend CDN**: Asset CSS, JS, Icon, dan Font dimuat melalui CDN berkecepatan tinggi.
 
 ---
 
-## ❌ Troubleshooting
+### Skenario A: Shared Hosting (cPanel)
 
-### Error: "Database Connection Failed"
+Shared hosting adalah metode yang paling umum digunakan pada instansi pemerintah / dinas.
 
-- Pastikan MySQL server sudah berjalan
-- Cek ulang `DB_USER` dan `DB_PASS` di file `.env` dan `config/database.php`
-- Pastikan database `stripmap_db` sudah dibuat (Step 4)
+#### Langkah 1 — Upload File ke Server
+Ada 2 metode struktur direktori yang direkomendasikan:
 
----
+* **Opsi 1 (Paling Aman - Recommended):**
+  1. Upload seluruh folder project `bmbk-stripmap` ke direktori root di luar `public_html`, misalnya di `/home/username/bmbk-stripmap/`.
+  2. Pindahkan seluruh isi folder `public/` ke dalam folder `public_html/`.
+  3. Edit file `public_html/index.php`, sesuaikan path bootstrap:
+     ```php
+     // Ubah dari:
+     define('BASE_PATH', dirname(__DIR__));
+     // Menjadi:
+     define('BASE_PATH', '/home/username/bmbk-stripmap');
+     ```
 
-### Error: "500 Internal Server Error"
+* **Opsi 2 (Menggunakan Subdomain / Subfolder):**
+  1. Buat Subdomain di cPanel, contoh: `stripmap.bmbklampung.com`.
+  2. Arahkan **Document Root** subdomain tersebut langsung ke subfolder `public/`, contoh: `public_html/bmbk-stripmap/public`.
 
-Aktifkan debug mode sementara di file `.env`:
+#### Langkah 2 — Buat Database di cPanel
+1. Buka cPanel → menu **MySQL Databases**.
+2. Buat database baru (contoh: `bmbk_stripmap_db`).
+3. Buat user database baru (contoh: `bmbk_user`) dengan password yang kuat.
+4. Hubungkan user ke database tersebut dengan mencentang opsi **ALL PRIVILEGES**.
 
+#### Langkah 3 — Import Schema Database
+1. Buka menu **phpMyAdmin** di cPanel.
+2. Pilih database yang baru saja dibuat di sidebar kiri.
+3. Buka tab **SQL**, copy-paste seluruh isi [`database/schema.sql`](database/schema.sql).
+   *(Catatan: Jika di cPanel tidak diizinkan menjalankan `CREATE DATABASE`, baris `CREATE DATABASE` dan `USE` di bagian atas file `schema.sql` bisa dilewati/dihapus, langsung jalankan mulai dari `CREATE TABLE IF NOT EXISTS`)*.
+
+#### Langkah 4 — Konfigurasi `.env` Production
+Buat file `.env` di server production:
 ```env
-APP_DEBUG=true
+APP_NAME='Stripmap - BMBK'
+APP_URL=https://stripmap.bmbklampung.com/
+APP_DEBUG=false
+APP_TIMEZONE=Asia/Jakarta
+
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=bmbk_stripmap_db
+DB_USER=bmbk_user
+DB_PASS=PasswordKuatMySQL123!
+```
+> ⚠️ **PENTING UNTUK KEAMANAN:**
+> - Pastikan `APP_DEBUG=false` agar detail query error tidak terlihat oleh publik jika terjadi gangguan.
+> - Pastikan `APP_URL` menggunakan protokol `https://`.
+
+#### Langkah 5 — Hak Akses Upload Foto (`public/uploads`)
+Di cPanel File Manager, pastikan folder `uploads/` memiliki izin permission `755` atau `775` agar fitur upload foto lapangan per STA dapat menyimpan gambar.
+
+---
+
+### Skenario B: VPS / Cloud Server (Ubuntu / Debian)
+
+Jika menggunakan VPS (DigitalOcean, AWS, IDCloudHost, dll):
+
+#### 1. Setup Direktori & Permissions
+```bash
+# Clone project ke direktori web
+cd /var/www
+git clone https://github.com/username/bmbk-stripmap.git
+
+# Berikan hak akses www-data ke folder upload
+chown -R www-data:www-data /var/www/bmbk-stripmap/public/uploads
+chmod -R 775 /var/www/bmbk-stripmap/public/uploads
 ```
 
-Refresh halaman untuk melihat pesan error detail. **Jangan lupa matikan kembali** setelah selesai troubleshoot.
+#### 2. Konfigurasi Nginx (Virtual Host)
+Buat file `/etc/nginx/sites-available/stripmap`:
+```nginx
+server {
+    listen 80;
+    server_name stripmap.bmbklampung.com;
+    root /var/www/bmbk-stripmap/public;
+    index index.php index.html;
+
+    client_max_body_size 20M;
+
+    location / {
+        try_files $uri $uri/ /index.php?url=$uri&$args;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    # Blokir akses ke file tersembunyi seperti .env atau .git
+    location ~ /\. {
+        deny all;
+    }
+}
+```
+Aktifkan konfigurasi dan reload Nginx:
+```bash
+ln -s /etc/nginx/sites-available/stripmap /etc/nginx/sites-enabled/
+nginx -t
+systemctl reload nginx
+```
+
+#### 3. Pasang SSL Gratis (HTTPS) dengan Certbot
+```bash
+sudo certbot --nginx -d stripmap.bmbklampung.com
+```
 
 ---
 
-### Error saat Import Excel: "zip extension not loaded"
+## ⚙️ Optimasi PHP untuk Produksi
 
-Aktifkan extension `zip` di `php.ini`:
+Pastikan nilai berikut disesuaikan di `php.ini` server produksi agar upload foto STA dan import Excel KML tidak terputus:
 
 ```ini
-extension=zip
-```
-
-Restart Apache / Laragon setelah menyimpan perubahan.
-
----
-
-### Halaman tidak ditemukan (404)
-
-Pastikan **mod_rewrite** Apache aktif dan file `.htaccess` di folder `public/` berfungsi:
-
-**Laragon:** Secara default sudah aktif.
-
-**XAMPP:** Edit file `C:\xampp\apache\conf\httpd.conf`, cari dan ubah:
-```apache
-# Dari:
-AllowOverride None
-
-# Menjadi:
-AllowOverride All
-```
-
-Lalu restart Apache.
-
----
-
-### URL tidak benar / redirect salah
-
-Pastikan `APP_URL` di `.env` diakhiri dengan `/` dan mengarah ke folder `public/`:
-
-```env
-# Benar:
-APP_URL=http://localhost/bmbk-stripmap/public/
-
-# Salah (tidak ada /public):
-APP_URL=http://localhost/bmbk-stripmap/
+upload_max_filesize = 20M
+post_max_size = 25M
+memory_limit = 256M
+max_execution_time = 300
 ```
 
 ---
 
-## 📁 Struktur Project
+## 🌐 Frontend Dependencies (All via CDN)
 
-```
-bmbk-stripmap/
-├── app/
-│   ├── controllers/       # Controller (DashboardController, RuasController, dll)
-│   ├── helpers/           # Helper & utility (Database, Router, ExcelImporter, dll)
-│   ├── models/            # Model (Stripmap, Ruas, dll)
-│   └── services/          # Service layer (StripmapService, RuasService, dll)
-├── config/
-│   ├── app.php            # Konfigurasi aplikasi (baca dari .env)
-│   └── database.php       # Konfigurasi koneksi database
-├── database/
-│   ├── schema.sql         # Struktur tabel database (jalankan ini pertama)
-│   └── seeder.sql         # Data contoh (opsional)
-├── public/
-│   ├── index.php          # Entry point semua request
-│   ├── .htaccess          # URL rewrite rules
-│   └── assets/            # CSS, JS, Gambar
-├── resources/
-│   └── views/             # Template HTML/PHP (layouts, pages)
-├── routes/
-│   └── web.php            # Definisi semua URL route
-├── .env                   # ⚠️ Buat manual, tidak ada di repo
-├── .env.example           # Contoh konfigurasi .env (jika ada)
-└── .gitignore             # File yang tidak di-track Git
-```
+Aplikasi tidak memerlukan build pipeline frontend (`npm/webpack/vite`). Seluruh library dimuat melalui CDN:
+
+| Library | Versi | Fungsi |
+|---|---|---|
+| **Tailwind CSS** | 3.x CDN | Styling UI responsif |
+| **Alpine.js** | 3.x CDN | Reaktivitas UI (toggle km/%, modal dialog, filter) |
+| **Chart.js** | 4.x CDN | Grafik distribusi kemantapan & multi-tahun |
+| **Chart.js DataLabels**| 2.2.0 | Label angka langsung pada grafik |
+| **Leaflet.js** | 1.9.4 | Peta spasial GIS & visualisasi polyline rute |
+| **SweetAlert2** | 11.x CDN | Dialog konfirmasi & notifikasi toast |
 
 ---
 
-## 🌐 Dependencies (Semua via CDN)
+## ✅ Checklist Go-Live Production
 
-Project ini **tidak menggunakan Composer** — tidak perlu `composer install`.
-
-Semua library frontend dimuat otomatis via CDN (perlu koneksi internet):
-
-| Library | Fungsi |
-|---|---|
-| **Tailwind CSS** | Framework CSS untuk styling |
-| **Alpine.js** | Interaktivitas UI ringan (sidebar, toggle) |
-| **Alpine.js Collapse** | Plugin animasi collapse sidebar |
-| **SweetAlert2** | Dialog konfirmasi & notifikasi toast |
-| **Chart.js** | Grafik di halaman dashboard |
-| **Google Fonts (Inter)** | Font utama aplikasi |
+- [ ] File `.env` sudah dibuat dengan kredensial database server production.
+- [ ] `APP_DEBUG=false` sudah diterapkan di `.env`.
+- [ ] `APP_URL` sudah mengarah ke domain/subdomain produksi (`https://...`).
+- [ ] Database schema sudah diimport lengkap ke database production.
+- [ ] Folder `public/uploads` memiliki izin tulis (permission `755`/`775`).
+- [ ] Extension PHP (`pdo_mysql`, `zip`, `fileinfo`, `mbstring`, `simplexml`) aktif di server.
+- [ ] SSL / HTTPS aktif dan halaman dashboard terbuka tanpa error koneksi.
 
 ---
-
-## ✅ Checklist Setup
-
-Gunakan checklist ini untuk memastikan semua langkah sudah selesai:
-
-- [ ] Git clone atau ekstrak ZIP ke `C:\laragon\www\bmbk-stripmap\`
-- [ ] Buat file `.env` di root project
-- [ ] Sesuaikan `DB_USER` dan `DB_PASS` di `.env` dan `config/database.php`
-- [ ] PHP extension `pdo_mysql`, `zip`, `fileinfo` sudah aktif
-- [ ] Jalankan `database/schema.sql` di phpMyAdmin / MySQL CLI
-- [ ] *(Opsional)* Jalankan `database/seeder.sql` untuk data contoh
-- [ ] Start Apache & MySQL (Laragon: klik **Start All**)
-- [ ] Buka `http://localhost/bmbk-stripmap/public/` di browser
-- [ ] Dashboard berhasil tampil ✅
+*Dinas Bina Marga & Bina Konstruksi Provinsi Lampung*

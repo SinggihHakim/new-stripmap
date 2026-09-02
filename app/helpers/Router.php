@@ -44,8 +44,21 @@ class Router
      */
     public function dispatch(): void
     {
-        $url    = trim($_GET['url'] ?? '', '/');
-        $method = $_SERVER['REQUEST_METHOD'];
+        if (isset($_GET['url']) && $_GET['url'] !== '') {
+            $url = trim($_GET['url'], '/');
+        } else {
+            // Fallback jika web server (Nginx/LiteSpeed) tidak mem-passing parameter ?url=
+            $requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
+            $scriptDir  = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\');
+            if ($scriptDir !== '' && $scriptDir !== '.' && strpos($requestUri, $scriptDir) === 0) {
+                $requestUri = substr($requestUri, strlen($scriptDir));
+            }
+            $url = trim($requestUri, '/');
+            if ($url === 'index.php') {
+                $url = '';
+            }
+        }
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
         foreach ($this->routes as $route) {
             // Ubah pola route menjadi regex, misal {id} → ([0-9]+)
