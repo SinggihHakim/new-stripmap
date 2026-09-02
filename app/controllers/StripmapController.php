@@ -455,4 +455,265 @@ class StripmapController
 
         redirect(base_url('stripmap/' . $ruasId));
     }
+
+    /**
+     * Halaman Perbandingan Stripmap Antar Tahun
+     * Menampilkan visual garis warna kondisi berlapis per tahun (Baseline + prediksi tiap tahun)
+     * beserta chart kemantapan dan tabel ringkasan untuk satu ruas.
+     */
+    public function compare($ruasId = null): void
+    {
+        if (empty($ruasId)) {
+            $all = $this->ruasService->getAll();
+            if (!empty($all)) {
+                redirect(base_url('stripmap/compare/' . $all[0]['id']));
+                return;
+            }
+            flash('error', 'Belum ada data ruas jalan.');
+            redirect(base_url('ruas'));
+            return;
+        }
+
+        $ruas = is_numeric($ruasId) ? $this->ruasService->findById((int)$ruasId) : $this->ruasService->findByKode((string)$ruasId);
+        if (!$ruas) {
+            flash('error', 'Ruas jalan tidak ditemukan.');
+            redirect(base_url('ruas'));
+            return;
+        }
+        $ruasId = (int)$ruas['id'];
+
+        $ruasList    = $this->ruasService->getAll();
+        $stripmaps   = $this->service->getByRuasId($ruasId);
+        $perkerasans = $this->perkerasanService->getByRuasId($ruasId);
+
+        $prediksiService = new PrediksiService();
+        $totalPanjangM   = (float)$ruas['panjang'];
+
+        // --- Hitung rentang STA keseluruhan ---
+        $staBase = (float)($ruas['sta_awal'] ?? 0);
+        $staEnd  = (float)($ruas['sta_akhir'] ?? 0);
+        if ($totalPanjangM > 0) {
+            $staEnd = max($staEnd, $staBase + $totalPanjangM);
+        }
+        foreach ($stripmaps as $sm) {
+            $staEnd = max($staEnd, (float)$sm['sta_akhir']);
+        }
+        if ($staEnd <= $staBase) {
+            $staEnd = $staBase + max($totalPanjangM, 1000.0);
+        }
+        $rentangM = $staEnd - $staBase;
+
+        // --- Helper: konversi stripmap menjadi array runs kondisi per segmen ---
+        // Setiap run: [sta_awal, sta_akhir, kondisi, pct_from, pct_to]
+        $buildRunsFromStripmap = function (array $smList) use ($staBase, $rentangM): array {
+            $runs = [];
+            foreach ($smList as $sm) {
+                $cur = (float)$sm['sta_awal'];
+                $conditions = [
+                    'baik'         => (float)$sm['baik'],
+                    'sedang'       => (float)$sm['sedang'],
+                    'rusak_ringan' => (float)$sm['rusak_ringan'],
+                    'rusak_berat'  => (float)$sm['rusak_berat'],
+                ];
+                foreach ($conditions as $condKey => $len) {
+                    if ($len > 0) {
+                        $pctFrom = $rentangM > 0 ? round((($cur - $staBase) / $rentangM) * 100, 4) : 0;
+                        $pctTo   = $rentangM > 0 ? round((($cur + $len - $staBase) / $rentangM) * 100, 4) : 0;
+                        $runs[]  = [
+                            'sta_awal'  => $cur,
+                            'sta_akhir' => $cur + $len,
+                            'kondisi'   => $condKey,
+                            'pct_from'  => $pctFrom,
+                            'pct_width' => round($pctTo - $pctFrom, 4),
+                        ];
+                        $cur += $len;
+                    }
+                }
+            }
+            return $runs;
+        };
+
+        // --- Helper: simulasi prediksi kondisi per segmen STA ---
+        // Menerapkan logika matriks penanganan ke masing-masing segmen stripmap
+        $buildPrediksiRuns = function (array $penangananList) use ($stripmaps, $prediksiService, $staBase, $rentangM): array {
+            // Buat salinan stripmap dengan kondisi yang bisa dimodifikasi
+            $smSim = [];
+            foreach ($stripmaps as $sm) {
+                $smSim[] = [
+                    'sta_awal'     => (float)$sm['sta_awal'],
+                    'sta_akhir'    => (float)$sm['sta_akhir'],
+                    'panjang'      => (float)$sm['panjang'],
+                    'baik'         => (float)$sm['baik'],
+                    'sedang'       => (float)$sm['sedang'],
+                    'rusak_ringan' => (float)$sm['rusak_ringan'],
+                    'rusak_berat'  => (float)$sm['rusak_berat'],
+                ];
+            }
+
+            // Terapkan setiap penanganan: ubah porsi kondisi di segmen yang di-overlap
+            foreach ($penangananList as $p) {
+                if (empty($p['jenis_pelaksana'])) continue;
+
+                $pAwal  = (float)$p['sta_awal'];
+                $pAkhir = (float)$p['sta_akhir'];
+
+                // Cari kondisi dominan di rentang ini dari smSim
+                $kondisiLengths = ['baik' => 0.0, 'sedang' => 0.0, 'rusak_ringan' => 0.0, 'rusak_berat' => 0.0];
+                foreach ($smSim as $sm) {
+                    $oStart = max($pAwal, $sm['sta_awal']);
+                    $oEnd   = min($pAkhir, $sm['sta_akhir']);
+                    if ($oEnd <= $oStart) continue;
+                    $oLen  = $oEnd - $oStart;
+                    $ratio = $sm['panjang'] > 0 ? $oLen / $sm['panjang'] : 0;
+                    foreach (['baik', 'sedang', 'rusak_ringan', 'rusak_berat'] as $k) {
+                        $kondisiLengths[$k] += $sm[$k] * $ratio;
+                    }
+                }
+                arsort($kondisiLengths);
+                $kondisiDominan = array_key_first($kondisiLengths) ?? 'baik';
+
+                $prediksi = $prediksiService->hitung($kondisiDominan, 'aspal', $p['jenis_pelaksana']);
+                if (!$prediksi['bisa_dilaksanakan'] || $prediksi['perlu_verifikasi']) continue;
+
+                $targetKondisi = $prediksi['kondisi_prediksi'];
+
+                // Modifikasi smSim: pindahkan porsi kondisi lama ke kondisi prediksi
+                foreach ($smSim as &$sm) {
+                    $oStart = max($pAwal, $sm['sta_awal']);
+                    $oEnd   = min($pAkhir, $sm['sta_akhir']);
+                    if ($oEnd <= $oStart) continue;
+                    $oLen  = $oEnd - $oStart;
+                    $ratio = $sm['panjang'] > 0 ? $oLen / $sm['panjang'] : 0;
+
+                    foreach (['baik', 'sedang', 'rusak_ringan', 'rusak_berat'] as $k) {
+                        if ($k !== $targetKondisi) {
+                            $porsi   = $sm[$k] * $ratio;
+                            $sm[$k]  = max(0.0, $sm[$k] - $porsi);
+                            $sm[$targetKondisi] += $porsi;
+                        }
+                    }
+                }
+                unset($sm);
+            }
+
+            // Bangun runs dari smSim yang sudah dimodifikasi
+            $runs = [];
+            foreach ($smSim as $sm) {
+                $cur = $sm['sta_awal'];
+                $conditions = [
+                    'baik'         => $sm['baik'],
+                    'sedang'       => $sm['sedang'],
+                    'rusak_ringan' => $sm['rusak_ringan'],
+                    'rusak_berat'  => $sm['rusak_berat'],
+                ];
+                foreach ($conditions as $condKey => $len) {
+                    if ($len > 0.5) { // threshold kecil agar tidak muncul sliver
+                        $pctFrom = $rentangM > 0 ? round((($cur - $staBase) / $rentangM) * 100, 4) : 0;
+                        $pctTo   = $rentangM > 0 ? round((($cur + $len - $staBase) / $rentangM) * 100, 4) : 0;
+                        $runs[]  = [
+                            'sta_awal'  => $cur,
+                            'sta_akhir' => $cur + $len,
+                            'kondisi'   => $condKey,
+                            'pct_from'  => $pctFrom,
+                            'pct_width' => round($pctTo - $pctFrom, 4),
+                        ];
+                        $cur += $len;
+                    }
+                }
+            }
+            return $runs;
+        };
+
+        // --- Hitung kemantapan dari runs ---
+        $hitungMantap = function (array $runs) use ($totalPanjangM): float {
+            $mantapM = 0.0;
+            foreach ($runs as $r) {
+                if (in_array($r['kondisi'], ['baik', 'sedang'])) {
+                    $mantapM += $r['sta_akhir'] - $r['sta_awal'];
+                }
+            }
+            return $totalPanjangM > 0 ? round(($mantapM / $totalPanjangM) * 100, 1) : 0.0;
+        };
+
+        // --- Bangun data per tahun (2025 = Baseline Data Awal, 2026-2029 = Prediksi Penanganan) ---
+        $yearlyData = [];
+        $tahunWarna = TahunHelper::getWarna();
+        $tahunAwal  = TahunHelper::awal();
+
+        // 1. Tahun 2025 (Baseline / Data Awal Eksisting)
+        $baselineRuns      = $buildRunsFromStripmap($stripmaps);
+        $baselinePctMantap = $hitungMantap($baselineRuns);
+        $yearlyData[$tahunAwal] = [
+            'label'       => (string)$tahunAwal,
+            'sublabel'    => 'Kondisi Awal (Baseline)',
+            'tahun'       => $tahunAwal,
+            'tipe'        => 'baseline',
+            'runs'        => $baselineRuns,
+            'pct_mantap'  => $baselinePctMantap,
+            'delta_pct'   => 0.0,
+            'penanganan'  => [],
+            'warna_label' => $tahunWarna[$tahunAwal] ?? '#0284c7',
+        ];
+
+        // 2. Tahun 2026 s/d 2029 (Prediksi Kumulatif Penanganan)
+        foreach (TahunHelper::getList() as $thn) {
+            if ($thn <= $tahunAwal) {
+                continue; // 2025 sudah dicatat sebagai baseline di atas
+            }
+
+            $pkgList    = $this->penangananService->getByRuasIdUpTo($ruasId, $thn);
+            $runs       = $buildPrediksiRuns($pkgList);
+            $pctMantap  = $hitungMantap($runs);
+            $delta      = round($pctMantap - $baselinePctMantap, 1);
+
+            $yearlyData[$thn] = [
+                'label'       => (string)$thn,
+                'sublabel'    => 'Prediksi Penanganan',
+                'tahun'       => $thn,
+                'tipe'        => 'prediksi',
+                'runs'        => $runs,
+                'pct_mantap'  => $pctMantap,
+                'delta_pct'   => $delta,
+                'penanganan'  => array_map(fn($p) => [
+                    'sta_awal'        => (float)$p['sta_awal'],
+                    'sta_akhir'       => (float)$p['sta_akhir'],
+                    'tahun'           => (int)$p['tahun'],
+                    'jenis_penanganan'=> $p['jenis_penanganan'] ?? '',
+                    'nama_paket'      => $p['nama_paket'] ?? '',
+                    'pct_from'        => $rentangM > 0
+                        ? round((((float)$p['sta_awal'] - $staBase) / $rentangM) * 100, 4)
+                        : 0,
+                    'pct_width'       => $rentangM > 0
+                        ? round((((float)$p['panjang']) / $rentangM) * 100, 4)
+                        : 0,
+                ], $pkgList),
+                'warna_label' => $tahunWarna[$thn] ?? '#6b7280',
+            ];
+        }
+
+        // --- STA tick marks untuk sumbu X ---
+        $tickCount  = 8; // maksimal 8 label STA
+        $tickStep   = $rentangM > 0 ? ceil($rentangM / $tickCount / 1000) * 1000 : 1000;
+        $ticks      = [];
+        for ($sta = $staBase; $sta <= $staEnd + 1; $sta += $tickStep) {
+            $pct    = $rentangM > 0 ? round((($sta - $staBase) / $rentangM) * 100, 2) : 0;
+            $ticks[] = ['meter' => $sta, 'pct' => $pct, 'label' => meter_to_sta($sta)];
+        }
+
+        $data = [
+            'title'       => 'Perbandingan Kondisi Ruas — ' . $ruas['nama_ruas'],
+            'ruas'        => $ruas,
+            'ruasList'    => $ruasList,
+            'yearlyData'  => $yearlyData,
+            'ticks'       => $ticks,
+            'staBase'     => $staBase,
+            'staEnd'      => $staEnd,
+            'rentangM'    => $rentangM,
+            'kondisiColors' => PrediksiService::KONDISI_COLORS,
+            'kondisiLabels' => PrediksiService::KONDISI_LABELS,
+        ];
+
+        view('layouts.app', array_merge($data, ['content' => 'stripmap.compare']));
+    }
 }
+

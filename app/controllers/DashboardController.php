@@ -10,20 +10,23 @@ class DashboardController
 {
     public function index(): void
     {
+        $selectedTahun  = TahunHelper::fromRequest();
+        $availableTahun = TahunHelper::getList();
+
         $ruasService = new RuasService();
         $ruasList    = $ruasService->getAll();
 
         $stripmapService   = new StripmapService();
-        $globalSummary     = $stripmapService->getGlobalSummary();
+        $globalSummary     = $stripmapService->getGlobalSummary(null, $selectedTahun);
 
         $perkerasanService = new PerkerasanService();
-        $perkerasanSummary = $perkerasanService->getGlobalSummary();
+        $perkerasanSummary = $perkerasanService->getGlobalSummary(null, $selectedTahun);
 
         // Hitung semua statistik km & persentase via helper bersama
         $stats = build_road_summary_stats($ruasList, $globalSummary, $perkerasanSummary);
 
         // 1. Chart Kabupaten
-        $summaryByKabupaten = $stripmapService->getSummaryByKabupaten();
+        $summaryByKabupaten = $stripmapService->getSummaryByKabupaten($selectedTahun);
         $kabupatenChartData = [];
         foreach ($summaryByKabupaten as $row) {
             $totalP       = (float)$row['total_panjang'];
@@ -40,7 +43,7 @@ class DashboardController
         }
 
         // 2. Chart Koridor
-        $summaryByKoridor = $stripmapService->getSummaryByKoridor();
+        $summaryByKoridor = $stripmapService->getSummaryByKoridor($selectedTahun);
         $koridorChartData = [];
         foreach ($summaryByKoridor as $row) {
             $totalP       = (float)$row['total_panjang'];
@@ -93,14 +96,13 @@ class DashboardController
         }
 
         $penangananService   = new PenangananService();
-        $selectedTahun       = isset($_GET['tahun']) && is_numeric($_GET['tahun']) && (int)$_GET['tahun'] > 0 ? (int)$_GET['tahun'] : null;
         $penangananSummary   = $penangananService->getGlobalSummary($selectedTahun);
-        $penangananYears     = $penangananService->getAvailableYears();
         $penangananByKab     = $penangananService->getSummaryByKabupaten($selectedTahun);
 
         $penangananStats = [
             'selectedTahun'       => $selectedTahun,
-            'penangananYears'     => $penangananYears,
+            'availableTahun'      => $availableTahun,
+            'penangananYears'     => $availableTahun,
             'penangananSummary'   => $penangananSummary,
             'penangananTotalKm'   => round(((float)($penangananSummary['total_panjang'] ?? 0)) / 1000, 2),
             'penangananRencanaKm' => round(((float)($penangananSummary['total_rencana'] ?? 0)) / 1000, 2),
@@ -112,6 +114,8 @@ class DashboardController
 
         $data = array_merge($stats, $penangananStats, [
             'title'              => 'Dashboard',
+            'selectedTahun'      => $selectedTahun,
+            'availableTahun'     => $availableTahun,
             'totalRuas'          => count($ruasList),
             'ruasList'           => $ruasList,
             'kabupatenChartData' => $kabupatenChartData,
@@ -130,9 +134,10 @@ class DashboardController
             $kondisiParam = 'rusak_ringan';
         }
 
+        $selectedTahun   = TahunHelper::fromRequest();
         $stripmapService = new StripmapService();
         $summaryPerRuas  = $stripmapService->getConditionSummaryPerRuas();
-        $globalSummary   = $stripmapService->getGlobalSummary();
+        $globalSummary   = $stripmapService->getGlobalSummary(null, $selectedTahun);
 
         $ruasService = new RuasService();
         $ruasList    = $ruasService->getAll();

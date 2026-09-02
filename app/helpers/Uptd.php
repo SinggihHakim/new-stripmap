@@ -12,12 +12,33 @@ class Uptd
      * Mapping Master UPTD ke Kabupaten / Kota
      */
     public const MAP = [
-        'UPTD 1' => ['Bandar Lampung', 'Pesawaran', 'Pringsewu'],
-        'UPTD 2' => ['Lampung Timur', 'Lampung Selatan'],
-        'UPTD 3' => ['Metro', 'Lampung Tengah'],
-        'UPTD 4' => ['Way Kanan', 'Lampung Utara'],
-        'UPTD 5' => ['Tanggamus', 'Pesisir Barat', 'Lampung Barat'],
-        'UPTD 6' => ['Mesuji', 'Tulang Bawang', 'Tulang Bawang Barat'],
+        'UPTD I'   => ['Bandar Lampung', 'Pesawaran', 'Pringsewu'],
+        'UPTD II'  => ['Lampung Selatan', 'Lampung Timur'],
+        'UPTD III' => ['Metro', 'Lampung Tengah'],
+        'UPTD IV'  => ['Lampung Utara', 'Way Kanan'],
+        'UPTD V'   => ['Tanggamus', 'Lampung Barat', 'Pesisir Barat'],
+        'UPTD VI'  => ['Tulang Bawang', 'Tulang Bawang Barat', 'Mesuji'],
+    ];
+
+    /**
+     * Daftar lengkap Kabupaten / Kota Provinsi Lampung
+     */
+    public const KABUPATEN_LIST = [
+        'Lampung Selatan',
+        'Lampung Tengah',
+        'Lampung Utara',
+        'Lampung Barat',
+        'Tulang Bawang',
+        'Tanggamus',
+        'Way Kanan',
+        'Pesawaran',
+        'Pringsewu',
+        'Mesuji',
+        'Tulang Bawang Barat',
+        'Pesisir Barat',
+        'Lampung Timur',
+        'Bandar Lampung',
+        'Metro',
     ];
 
     /**

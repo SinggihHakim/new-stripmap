@@ -205,11 +205,15 @@ class RuasController
 
         $stripmapService   = new StripmapService();
         $perkerasanService = new PerkerasanService();
+        $penangananService = new PenangananService();
 
         $stripmaps         = $stripmapService->getByRuasId($id);
         $summary           = $stripmapService->getSummary($id);
         $perkerasans       = $perkerasanService->getByRuasId($id);
         $summaryPerkerasan = $perkerasanService->getSummary($id);
+        $penanganans       = $penangananService->getByRuasId($id);
+        $penangananSummary = $penangananService->getSummary($id);
+        $penangananYears   = $penangananService->getAvailableYears($id);
 
         $data = [
             'title'             => 'Detail Ruas Jalan - ' . $ruas['nama_ruas'],
@@ -218,6 +222,9 @@ class RuasController
             'summary'           => $summary,
             'perkerasans'       => $perkerasans,
             'summaryPerkerasan' => $summaryPerkerasan,
+            'penanganans'       => $penanganans,
+            'penangananSummary' => $penangananSummary,
+            'penangananYears'   => $penangananYears,
         ];
         view('layouts.app', array_merge($data, ['content' => 'ruas.show']));
     }

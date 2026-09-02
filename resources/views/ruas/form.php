@@ -1,4 +1,4 @@
-<!-- ============================================================ -->
+﻿<!-- ============================================================ -->
 <!-- Form Tambah / Edit Ruas Jalan (Beserta Strip Map & Perkerasan)-->
 <!-- ============================================================ -->
 
@@ -287,7 +287,7 @@
                                     <th class="px-3 py-3 w-24">Panjang</th>
                                     <th class="px-3 py-3 text-gray-700">Rigid (m)</th>
                                     <th class="px-3 py-3 text-slate-900">Aspal (m)</th>
-                                    <th class="px-3 py-3 text-amber-800">Agregat / Tanah (m)</th>
+                                    <th class="px-3 py-3 text-amber-800">Kerikil (m)</th>
                                     <th class="px-3 py-3 text-purple-700">Belum Tembus (m)</th>
                                     <th class="px-3 py-3 w-16 text-center">Status</th>
                                     <th class="px-3 py-3 w-16 text-center">Aksi</th>

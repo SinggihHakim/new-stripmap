@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * ============================================================
@@ -49,7 +49,7 @@ class PrediksiService
     public const PERKERASAN_LABELS = [
         'rigid'         => 'Rigid',
         'aspal'         => 'Aspal',
-        'agregat_tanah' => 'Agregat / Tanah',
+        'agregat_tanah' => 'Kerikil',
         'belum_tembus'  => 'Belum Tembus',
     ];
 
@@ -332,13 +332,13 @@ class PrediksiService
     /**
      * URC UPTD (Base):
      * - B, S, RR → Perlu Verifikasi Manual (kompleks, bergantung kondisi aktual)
-     * - RB → RB - Agregat/Tanah
+     * - RB → RB - Kerikil
      */
     private function hitungUrcBase(string $kondisi, string $perkerasan): array
     {
         if ($kondisi === 'rusak_berat') {
             return $this->hasil('rusak_berat', 'agregat_tanah',
-                "Rusak Berat ditangani URC UPTD (Base). Prediksi hasil: Rusak Berat - Agregat/Tanah."
+                "Rusak Berat ditangani URC UPTD (Base). Prediksi hasil: Rusak Berat - Kerikil."
             );
         }
 
@@ -348,7 +348,7 @@ class PrediksiService
             "Perlu Verifikasi Manual:\n" .
             "A. Apakah Terjadi Penurunan Kondisi? (Ya/Tidak)\n" .
             "B. Apakah Untuk Menutup Lubang? (Ya/Tidak)\n" .
-            "Jika A=Ya → Hasil: Rusak Berat - Agregat/Tanah\n" .
+            "Jika A=Ya → Hasil: Rusak Berat - Kerikil\n" .
             "Jika A=Tidak → Hasil: " . (self::KONDISI_LABELS[$kondisi] ?? ucfirst($kondisi)) . " - {$perkerasan}"
         );
     }

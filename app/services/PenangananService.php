@@ -32,16 +32,21 @@ class PenangananService
         'selesai' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
     ];
 
-    // Palette warna tahun untuk mode layering multi-tahun
+    // Palette warna tahun — sumber tunggal via TahunHelper::getWarna()
+    // Tambahan warna 2024 untuk data historis di luar range utama
     public const YEAR_COLORS = [
-        2024 => '#64748b',
-        2025 => '#0284c7',
-        2026 => '#6366f1',
-        2027 => '#8b5cf6',
-        2028 => '#ec4899',
-        2029 => '#f59e0b',
-        2030 => '#10b981',
+        2024 => '#64748b', // slate-500 (historis)
     ];
+
+    /**
+     * Kembalikan warna untuk tahun tertentu (gabungan historis + TahunHelper)
+     */
+    public static function getYearColor(int $tahun): string
+    {
+        $historic = self::YEAR_COLORS;
+        $main     = TahunHelper::getWarna();
+        return $main[$tahun] ?? $historic[$tahun] ?? '#6b7280';
+    }
 
     public function __construct()
     {
@@ -56,6 +61,20 @@ class PenangananService
     public function getByRuasId(int $ruasId, ?int $tahun = null): array
     {
         $rows = $this->model->getByRuasId($ruasId, $tahun);
+        foreach ($rows as &$r) {
+            $r['status_label'] = self::STATUS_LABELS[$r['status']] ?? ucfirst($r['status']);
+            $r['status_badge'] = self::STATUS_BADGES[$r['status']] ?? 'bg-gray-100 text-gray-700 border-gray-200';
+            $r['display_color'] = !empty($r['warna']) ? $r['warna'] : (self::STATUS_COLORS[$r['status']] ?? '#6366f1');
+        }
+        return $rows;
+    }
+
+    /**
+     * Ambil data penanganan per ruas jalan hingga tahun tertentu (kumulatif)
+     */
+    public function getByRuasIdUpTo(int $ruasId, int $tahun): array
+    {
+        $rows = $this->model->getByRuasIdUpTo($ruasId, $tahun);
         foreach ($rows as &$r) {
             $r['status_label'] = self::STATUS_LABELS[$r['status']] ?? ucfirst($r['status']);
             $r['status_badge'] = self::STATUS_BADGES[$r['status']] ?? 'bg-gray-100 text-gray-700 border-gray-200';

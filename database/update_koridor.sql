@@ -1,170 +1,70 @@
--- ============================================================
--- SQL Update Koridor Ruas Jalan (22 Koridor)
+﻿-- ============================================================
+-- SQL Update Koridor & Kabupaten Ruas Jalan Provinsi Lampung
+-- Berdasarkan Data Resmi UPTD Dinas BMBK Lampung
+-- Update: 2026-09-01
+-- Format kode_ruas: 3 digit dengan leading zero, titik (bukan spasi)
+-- Contoh: 001.11K, 041.12K, 002
 -- ============================================================
 
 USE `stripmap_db`;
 
--- KORIDOR 1
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 1' WHERE 
-   `nama_ruas` LIKE '%Pagar Alam%Kalianda%' 
-OR `nama_ruas` LIKE '%Kalianda%Kunyir%Gayam%' 
-OR `nama_ruas` LIKE '%Gayam%Ketapang%' 
-OR `nama_ruas` LIKE '%Sidomulyo%Belimbing Sari%' 
-OR `nama_ruas` LIKE '%Belimbing Sari%Jabung%' 
-OR `nama_ruas` LIKE '%Jabung%Labuhan Maringgai%';
+-- KORIDOR I (UPTD I - Pringsewu, Pesawaran)
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR I', `kabupaten_kota` = 'Pringsewu' WHERE `kode_ruas` IN ('033','034','035');
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR I', `kabupaten_kota` = 'Pesawaran' WHERE `kode_ruas` IN ('037','038','039');
 
--- KORIDOR 2
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 2' WHERE 
-   `nama_ruas` LIKE '%A.Yani%Metro%' OR `nama_ruas` LIKE '%A. Yani%Metro%'
-OR `nama_ruas` LIKE '%Metro%Tanjung Kari%' 
-OR `nama_ruas` LIKE '%Nyampir%Tanjung Kari%' 
-OR `nama_ruas` LIKE '%Tanjung Kari%Pugung Raharjo%' 
-OR `nama_ruas` LIKE '%Pugung Raharjo%Jabung%';
+-- KORIDOR II (UPTD I - Bandar Lampung, Pesawaran)
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR II', `kabupaten_kota` = 'Bandar Lampung' WHERE `kode_ruas` IN ('012.11K','041.11K','041.12K');
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR II', `kabupaten_kota` = 'Pesawaran' WHERE `kode_ruas` IN ('042','043','040');
 
--- KORIDOR 3
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 3' WHERE 
-   `nama_ruas` LIKE '%Ryacudu%' 
-OR `nama_ruas` LIKE '%Korpri%Sukadamai%' 
-OR `nama_ruas` LIKE '%Sukadamai%Kibang%' 
-OR `nama_ruas` LIKE '%Budi Utomo%Metro%' 
-OR `nama_ruas` LIKE '%Soekarno%Hatta%Metro%' 
-OR `nama_ruas` LIKE '%Korpri%Purwotani%' 
-OR `nama_ruas` LIKE '%Veteran%Metro%' 
-OR `nama_ruas` LIKE '%Pattimura%Metro%' 
-OR `nama_ruas` LIKE '%Metro%Kota Gajah%';
+-- KORIDOR III (UPTD II - Lampung Selatan, Lampung Timur)
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR III', `kabupaten_kota` = 'Lampung Selatan' WHERE `kode_ruas` IN ('001.11K','002','003','004');
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR III', `kabupaten_kota` = 'Lampung Timur' WHERE `kode_ruas` IN ('005','006','011');
 
--- KORIDOR 4
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 4' WHERE 
-   `nama_ruas` LIKE '%Kota Gajah%Randu%' 
-OR `nama_ruas` LIKE '%Randu%Seputih Surabaya%' 
-OR `nama_ruas` LIKE '%Seputih Surabaya%Sadewa%';
+-- KORIDOR IV (UPTD II - Lampung Timur, Lampung Selatan)
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR IV', `kabupaten_kota` = 'Lampung Timur' WHERE `kode_ruas` IN ('008','009','010','014','024');
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR IV', `kabupaten_kota` = 'Lampung Selatan' WHERE `kode_ruas` IN ('013','016');
 
--- KORIDOR 5
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 5' WHERE 
-   `nama_ruas` LIKE '%Gunung Sugih%Kota Gajah%' 
-OR `nama_ruas` LIKE '%Kota Gajah%Gedong Dalem%' 
-OR `nama_ruas` LIKE '%Bandar Jaya%Mandala%';
+-- KORIDOR V (UPTD III - Lampung Tengah)
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR V', `kabupaten_kota` = 'Lampung Tengah' WHERE `kode_ruas` IN ('019','020','021','022');
 
--- KORIDOR 6
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 6' WHERE 
-   `nama_ruas` LIKE '%Kalirejo%Bangunrejo%' 
-OR `nama_ruas` LIKE '%Bangunrejo%Wates%' 
-OR `nama_ruas` LIKE '%Wates%Metro%' 
-OR `nama_ruas` LIKE '%Brigjen Katamso%Metro%';
+-- KORIDOR VI (UPTD III - Metro, Lampung Tengah)
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR VI', `kabupaten_kota` = 'Metro' WHERE `kode_ruas` IN ('007.11K','015.11K','015.12K','017.11K','017.12K','028.11K');
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR VI', `kabupaten_kota` = 'Lampung Tengah' WHERE `kode_ruas` IN ('018','025','026','027');
 
--- KORIDOR 7
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 7' WHERE 
-   `nama_ruas` LIKE '%Gunung Sugih%Padang Ratu%' 
-OR `nama_ruas` LIKE '%Padang Ratu%Pekurun Udik%' 
-OR `nama_ruas` LIKE '%Pekurun Udik%Aji Kagungan%';
+-- KORIDOR VII (UPTD III - Lampung Tengah)
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR VII', `kabupaten_kota` = 'Lampung Tengah' WHERE `kode_ruas` IN ('023','029','030','032');
 
--- KORIDOR 8
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 8' WHERE 
-   `nama_ruas` LIKE '%Padang Ratu%Kalirejo%' 
-OR `nama_ruas` LIKE '%Kalirejo%Pringsewu%' 
-OR `nama_ruas` LIKE '%Pringsewu%Pardasuka%' 
-OR `nama_ruas` LIKE '%Pardasuka%Sukamara%' 
-OR `nama_ruas` LIKE '%Sukamara%Kuripan%';
+-- KORIDOR VIII (UPTD IV - Lampung Utara)
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR VIII', `kabupaten_kota` = 'Lampung Utara' WHERE `kode_ruas` IN ('031','061','062','063','066','067');
 
--- KORIDOR 9
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 9' WHERE 
-   `nama_ruas` LIKE '%Branti%Gedong Tataan%' 
-OR `nama_ruas` LIKE '%Gedong Tataan%Kedondong%' 
-OR `nama_ruas` LIKE '%Kedondong%Pardasuka%' 
-OR `nama_ruas` LIKE '%Padang Cermin%Kedondong%';
+-- KORIDOR IX (UPTD IV - Lampung Utara, Way Kanan)
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR IX', `kabupaten_kota` = 'Lampung Utara' WHERE `kode_ruas` IN ('070','071','072');
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR IX', `kabupaten_kota` = 'Way Kanan' WHERE `kode_ruas` IN ('073','074','075');
 
--- KORIDOR 10
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 10' WHERE 
-   `nama_ruas` LIKE '%Tenggiri%' 
-OR `nama_ruas` LIKE '%R.E.Martadinata%' OR `nama_ruas` LIKE '%RE Martadinata%'
-OR `nama_ruas` LIKE '%Lempasing%Padang Cermin%' 
-OR `nama_ruas` LIKE '%Padang Cermin%Teluk Kiluan%';
+-- KORIDOR X (UPTD IV - Way Kanan)
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR X', `kabupaten_kota` = 'Way Kanan' WHERE `kode_ruas` IN ('076','077','078','079','080');
 
--- KORIDOR 11
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 11' WHERE 
-   `nama_ruas` LIKE '%Teluk Kiluan%Umbar%' 
-OR `nama_ruas` LIKE '%Umbar%Putih Doh%' 
-OR `nama_ruas` LIKE '%Putih Doh%Kuripan%' 
-OR `nama_ruas` LIKE '%Kuripan%Kota Agung%';
+-- KORIDOR XI (UPTD IV - Lampung Utara, Way Kanan)
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR XI', `kabupaten_kota` = 'Lampung Utara' WHERE `kode_ruas` IN ('081');
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR XI', `kabupaten_kota` = 'Way Kanan' WHERE `kode_ruas` IN ('082','083','084','088','089');
 
--- KORIDOR 12
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 12' WHERE 
-   `nama_ruas` LIKE '%Pekon Balak%Suoh%' 
-OR `nama_ruas` LIKE '%Suoh%Blok 9%' 
-OR `nama_ruas` LIKE '%Blok 9%Sanggi%' 
-OR `nama_ruas` LIKE '%Raden Intan%Liwa%' 
-OR `nama_ruas` LIKE '%Liwa%Bts.Sumsel%' OR `nama_ruas` LIKE '%Liwa%Sumsel%'
-OR `nama_ruas` LIKE '%Adam Malik%Krui%' 
-OR `nama_ruas` LIKE '%Krui%Pekon Serai%' 
-OR `nama_ruas` LIKE '%Kota Jawa%Kampung Baru%';
+-- KORIDOR XII (UPTD V - Tanggamus)
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR XII', `kabupaten_kota` = 'Tanggamus' WHERE `kode_ruas` IN ('036','044','045','046','047');
 
--- KORIDOR 13
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 13' WHERE 
-   `nama_ruas` LIKE '%Tekad%Batutegi%' 
-OR `nama_ruas` LIKE '%Talang Padang%Ngarip%' 
-OR `nama_ruas` LIKE '%Ngarip%Ulu Semong%' 
-OR `nama_ruas` LIKE '%Ulu Semong%Trimulyo%' 
-OR `nama_ruas` LIKE '%Trimulyo%Bungin%Tugu Sari%';
+-- KORIDOR XIII (UPTD V - Lampung Barat, Tanggamus, Pesisir Barat)
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR XIII', `kabupaten_kota` = 'Lampung Barat' WHERE `kode_ruas` IN ('048','049','051.11K','052');
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR XIII', `kabupaten_kota` = 'Tanggamus' WHERE `kode_ruas` IN ('050');
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR XIII', `kabupaten_kota` = 'Pesisir Barat' WHERE `kode_ruas` IN ('053.11K','054','055');
 
--- KORIDOR 14
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 14' WHERE 
-   `nama_ruas` LIKE '%Abung Raya Brt%' OR `nama_ruas` LIKE '%Abung Raya Barat%'
-OR `nama_ruas` LIKE '%Abung Raya Tmr%' OR `nama_ruas` LIKE '%Abung Raya Timur%'
-OR `nama_ruas` LIKE '%Kotabumi%Bandar Abung%' 
-OR `nama_ruas` LIKE '%Bandar Abung%Bandar Sakti%' 
-OR `nama_ruas` LIKE '%Bandar Sakti%Daya Murni%' 
-OR `nama_ruas` LIKE '%Daya Murni%Gunung Batin%' 
-OR `nama_ruas` LIKE '%Bandar Abung%Tujok%';
+-- KORIDOR XIV (UPTD V - Tanggamus, Lampung Barat)
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR XIV', `kabupaten_kota` = 'Tanggamus' WHERE `kode_ruas` IN ('056','057','058','060');
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR XIV', `kabupaten_kota` = 'Lampung Barat' WHERE `kode_ruas` IN ('059');
 
--- KORIDOR 15
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 15' WHERE 
-   `nama_ruas` LIKE '%Negara Ratu%Tujok%' 
-OR `nama_ruas` LIKE '%Tujok%Panaragan Jaya%' 
-OR `nama_ruas` LIKE '%Panaragan Jaya%Panaragan%';
+-- KORIDOR XV (UPTD VI - Tulang Bawang Barat, Tulang Bawang)
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR XV', `kabupaten_kota` = 'Tulang Bawang Barat' WHERE `kode_ruas` IN ('064','065','068','069','087','091');
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR XV', `kabupaten_kota` = 'Tulang Bawang' WHERE `kode_ruas` IN ('085.11K','086');
 
--- KORIDOR 16
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 16' WHERE 
-   `nama_ruas` LIKE '%Kotabumi%Ketapang%' 
-OR `nama_ruas` LIKE '%Ketapang%Negara Ratu%' 
-OR `nama_ruas` LIKE '%Negara Ratu%Gunung Betuah%' 
-OR `nama_ruas` LIKE '%Gunung Betuah%Gunung Labuhan%';
-
--- KORIDOR 17
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 17' WHERE 
-   `nama_ruas` LIKE '%Sp.Empat%Kasui%' OR `nama_ruas` LIKE '%Simpang Empat%Kasui%'
-OR `nama_ruas` LIKE '%Kasui%Air Ringkih%';
-
--- KORIDOR 18
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 18' WHERE 
-   `nama_ruas` LIKE '%Empat%Blambangan Umpu%' 
-OR `nama_ruas` LIKE '%Blambangan Umpu%Sri Rejeki%' 
-OR `nama_ruas` LIKE '%Sri Rejeki%Pakuan Ratu%' 
-OR `nama_ruas` LIKE '%Pakuan Ratu%Bumiharjo%' 
-OR `nama_ruas` LIKE '%Bumiharjo%Way Tuba%';
-
--- KORIDOR 19
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 19' WHERE 
-   `nama_ruas` LIKE '%Negara Ratu%Soponyono%' 
-OR `nama_ruas` LIKE '%Soponyono%Serupa Indah%' 
-OR `nama_ruas` LIKE '%Serupa Indah%Pakuan Ratu%' 
-OR `nama_ruas` LIKE '%Serupa Indah%Tajab%';
-
--- KORIDOR 20
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 20' WHERE 
-   `nama_ruas` LIKE '%Gunung Sakti%Menggala%' 
-OR `nama_ruas` LIKE '%Bujung Tenuk%Penumangan%' 
-OR `nama_ruas` LIKE '%Penumangan%Tegal Mukti%' 
-OR `nama_ruas` LIKE '%Tegal Mukti%Tajab%';
-
--- KORIDOR 21
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 21' WHERE 
-   `nama_ruas` LIKE '%Tajab%Adijaya%' 
-OR `nama_ruas` LIKE '%Adijaya%Tulung Randu%' 
-OR `nama_ruas` LIKE '%Penumangan%Unit VI%';
-
--- KORIDOR 22
-UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR 22' WHERE 
-   `nama_ruas` LIKE '%Unit VIII%Gedong Aji%' 
-OR `nama_ruas` LIKE '%Gedong Aji%Umbul Mesir%' 
-OR `nama_ruas` LIKE '%Pematang%Brabasan%' 
-OR `nama_ruas` LIKE '%Brabasan%Wiralaga%';
+-- KORIDOR XVI (UPTD VI - Tulang Bawang, Mesuji, Tulang Bawang Barat)
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR XVI', `kabupaten_kota` = 'Tulang Bawang' WHERE `kode_ruas` IN ('092','093');
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR XVI', `kabupaten_kota` = 'Mesuji' WHERE `kode_ruas` IN ('094','095');
+UPDATE `ruas_jalan` SET `koridor` = 'KORIDOR XVI', `kabupaten_kota` = 'Tulang Bawang Barat' WHERE `kode_ruas` IN ('090');

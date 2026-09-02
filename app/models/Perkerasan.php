@@ -185,7 +185,7 @@ class Perkerasan
     /**
      * Ambil ringkasan perkerasan global seluruh ruas jalan
      */
-    public function getGlobalSummary(?array $ruasIds = null): array
+    public function getGlobalSummary(?array $ruasIds = null, ?int $tahun = null): array
     {
         if ($ruasIds !== null && empty($ruasIds)) {
             return [
@@ -197,11 +197,19 @@ class Perkerasan
             ];
         }
 
-        $whereClause = '';
+        $conditions = [];
         if ($ruasIds !== null) {
             $inQuery = implode(',', array_map('intval', $ruasIds));
-            $whereClause = " WHERE ruas_id IN ($inQuery)";
+            $conditions[] = "ruas_id IN ($inQuery)";
         }
+        if ($tahun !== null) {
+            // Cek apakah data survei terpisah untuk tahun tersebut ada di DB
+            $checkStmt = $this->db->prepare('SELECT 1 FROM perkerasan WHERE tahun = :tahun LIMIT 1');
+            $checkStmt->execute(['tahun' => $tahun]);
+            $effectiveTahun = $checkStmt->fetch() ? (int)$tahun : 2025;
+            $conditions[] = "tahun = " . $effectiveTahun;
+        }
+        $whereClause = $conditions ? ' WHERE ' . implode(' AND ', $conditions) : '';
 
         $stmt = $this->db->query(
             "SELECT
@@ -219,5 +227,16 @@ class Perkerasan
             'total_agregat_tanah' => 0,
             'total_belum_tembus'  => 0,
         ];
+    }
+
+    /**
+     * Ambil daftar tahun yang tersedia di tabel perkerasan
+     */
+    public function getAvailableYears(): array
+    {
+        $stmt = $this->db->query(
+            'SELECT DISTINCT tahun FROM perkerasan WHERE tahun IS NOT NULL ORDER BY tahun DESC'
+        );
+        return array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'tahun');
     }
 }

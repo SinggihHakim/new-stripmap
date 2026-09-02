@@ -13,6 +13,7 @@ $router = new Router();
 // Halaman Utama (Dashboard) & Detail
 // ──────────────────────────────────────────────
 $router->get('',                 'DashboardController', 'index');
+$router->get('dashboard',        'DashboardController', 'index');
 $router->get('dashboard/detail', 'DashboardController', 'detail');
 
 // ──────────────────────────────────────────────
@@ -39,6 +40,8 @@ $router->get('stripmap/edit/{id}',        'StripmapController', 'edit');
 $router->post('stripmap/update/{id}',     'StripmapController', 'update');
 $router->post('stripmap/delete/{id}',  'StripmapController', 'delete');
 $router->get('stripmap/preview/{id}',     'StripmapController', 'preview');
+$router->get('stripmap/compare',          'StripmapController', 'compare');
+$router->get('stripmap/compare/{id}',     'StripmapController', 'compare');
 $router->post('stripmap/import-kml/{id}', 'StripmapController', 'importKml');
 
 // ──────────────────────────────────────────────

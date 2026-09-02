@@ -249,8 +249,16 @@ class PerkerasanService
     /**
      * Ambil ringkasan perkerasan global seluruh ruas jalan
      */
-    public function getGlobalSummary(?array $ruasIds = null): array
+    public function getGlobalSummary(?array $ruasIds = null, ?int $tahun = null): array
     {
-        return $this->model->getGlobalSummary($ruasIds);
+        return $this->model->getGlobalSummary($ruasIds, $tahun);
+    }
+
+    /**
+     * Ambil daftar tahun tersedia di tabel perkerasan
+     */
+    public function getAvailableYears(): array
+    {
+        return $this->model->getAvailableYears();
     }
 }

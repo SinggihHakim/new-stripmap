@@ -52,13 +52,16 @@
     </div>
 
     <!-- Strip Map & Perkerasan Visual -->
-    <?php if (!empty($stripmaps) || !empty($perkerasans)): ?>
+    <?php if (!empty($stripmaps) || !empty($perkerasans) || !empty($penanganans)): ?>
         <?php view('stripmap._visual', [
             'stripmaps'         => $stripmaps,
             'summary'           => $summary,
             'ruas'              => $ruas,
             'perkerasans'       => $perkerasans ?? [],
-            'summaryPerkerasan' => $summaryPerkerasan ?? []
+            'summaryPerkerasan' => $summaryPerkerasan ?? [],
+            'penanganans'       => $penanganans ?? [],
+            'penangananSummary' => $penangananSummary ?? [],
+            'penangananYears'   => $penangananYears ?? []
         ]); ?>
     <?php endif; ?>
 

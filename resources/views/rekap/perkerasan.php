@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * View: Rekapitulasi Jenis Perkerasan Jalan
  */
@@ -34,6 +34,31 @@
         </div>
 
         <div class="flex items-center gap-2 sm:gap-3">
+            <?php if (!empty($availableTahun)): ?>
+            <form method="GET" class="flex items-center">
+                <div class="relative">
+                    <select name="tahun" onchange="this.form.submit()"
+                            class="appearance-none pl-8 pr-8 py-2.5 text-xs font-semibold bg-white border border-gray-300 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all cursor-pointer shadow-sm">
+                        <option value="">Semua Tahun</option>
+                        <?php foreach ($availableTahun as $thn): ?>
+                        <option value="<?= (int)$thn ?>" <?= $selectedTahun === (int)$thn ? 'selected' : '' ?>>
+                            <?= (int)$thn ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 left-2.5 flex items-center">
+                        <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <div class="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                </div>
+            </form>
+            <?php endif; ?>
             <button type="button" onclick="window.print()" class="inline-flex items-center gap-2 px-3.5 py-2.5 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl text-xs font-semibold border border-gray-300/80 transition-all">
                 <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                 <span>Cetak Halaman Ini</span>
@@ -79,10 +104,10 @@
             <p class="text-[11px] text-slate-600 mt-2">Flex Pavement (AC-WC/AC-BC)</p>
         </div>
 
-        <!-- Card Agregat / Tanah -->
+        <!-- Card Kerikil -->
         <div class="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm relative overflow-hidden bg-gradient-to-br from-white to-amber-50/30">
             <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-bold text-amber-900 uppercase tracking-wider">Agregat / Tanah</span>
+                <span class="text-xs font-bold text-amber-900 uppercase tracking-wider">Kerikil</span>
                 <div class="p-2 rounded-xl bg-amber-100 text-amber-800">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7M4 7c0-2 1.5-3 3.5-3h9c2 0 3.5 1 3.5 3M4 7h16"/></svg>
                 </div>
@@ -149,7 +174,7 @@
                         <th class="py-3.5 px-4 text-right">Total Panjang (Km)</th>
                         <th class="py-3.5 px-4 text-right text-blue-800">Rigid / Beton (Km)</th>
                         <th class="py-3.5 px-4 text-right text-slate-800">Aspal (Km)</th>
-                        <th class="py-3.5 px-4 text-right text-amber-800">Agregat / Tanah (Km)</th>
+                        <th class="py-3.5 px-4 text-right text-amber-800">Kerikil (Km)</th>
                         <th class="py-3.5 px-4 text-right text-red-800">Belum Tembus (Km)</th>
                         <th class="py-3.5 px-4 text-center">Komposisi Perkerasan</th>
                     </tr>
@@ -168,7 +193,7 @@
                                 <div class="w-32 bg-gray-200 rounded-full h-3 overflow-hidden flex ml-auto border border-gray-200">
                                     <div class="bg-blue-600 h-full" style="width: <?= $row['pct_rigid'] ?>%" title="Rigid: <?= $row['pct_rigid'] ?>%"></div>
                                     <div class="bg-slate-700 h-full" style="width: <?= $row['pct_aspal'] ?>%" title="Aspal: <?= $row['pct_aspal'] ?>%"></div>
-                                    <div class="bg-amber-500 h-full" style="width: <?= $row['pct_agregat_tanah'] ?>%" title="Agregat/Tanah: <?= $row['pct_agregat_tanah'] ?>%"></div>
+                                    <div class="bg-amber-500 h-full" style="width: <?= $row['pct_agregat_tanah'] ?>%" title="Kerikil: <?= $row['pct_agregat_tanah'] ?>%"></div>
                                     <div class="bg-red-500 h-full" style="width: <?= $row['pct_belum_tembus'] ?>%" title="Belum Tembus: <?= $row['pct_belum_tembus'] ?>%"></div>
                                 </div>
                             </td>
@@ -194,7 +219,7 @@
                         <th class="py-3.5 px-4 text-right">Total Panjang (Km)</th>
                         <th class="py-3.5 px-4 text-right text-blue-800">Rigid / Beton (Km)</th>
                         <th class="py-3.5 px-4 text-right text-slate-800">Aspal (Km)</th>
-                        <th class="py-3.5 px-4 text-right text-amber-800">Agregat / Tanah (Km)</th>
+                        <th class="py-3.5 px-4 text-right text-amber-800">Kerikil (Km)</th>
                         <th class="py-3.5 px-4 text-right text-red-800">Belum Tembus (Km)</th>
                         <th class="py-3.5 px-4 text-center">Komposisi</th>
                     </tr>

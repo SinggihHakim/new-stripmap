@@ -179,28 +179,203 @@ class StripmapService
         return $this->model->deleteByRuasId($ruasId);
     }
 
+    private array $accumulatedCache = [];
+
     /**
      * Ambil ringkasan kondisi global seluruh ruas jalan
      */
-    public function getGlobalSummary(?array $ruasIds = null): array
+    public function getGlobalSummary(?array $ruasIds = null, ?int $tahun = null): array
     {
-        return $this->model->getGlobalSummary($ruasIds);
+        if ($ruasIds !== null) {
+            return $this->model->getGlobalSummary($ruasIds, $tahun);
+        }
+        if ($tahun === 2025) {
+            return $this->model->getGlobalSummary(null, 2025);
+        }
+        $data = $this->getAccumulatedConditionData($tahun);
+        return $data['globalSummary'];
     }
 
     /**
      * Ambil ringkasan kondisi per ruas jalan
      */
-    public function getConditionSummaryPerRuas(): array
+    public function getConditionSummaryPerRuas(?int $tahun = null): array
     {
-        return $this->model->getConditionSummaryPerRuas();
+        if ($tahun === 2025) {
+            return $this->model->getConditionSummaryPerRuas();
+        }
+        $data = $this->getAccumulatedConditionData($tahun);
+        return $data['summaryPerRuas'];
     }
 
     /**
-     * Ambil ringkasan kemantapan per kabupaten/kota (untuk line chart dashboard)
+     * Ambil ringkasan kemantapan per kabupaten/kota (untuk chart dashboard & rekap)
      */
-    public function getSummaryByKabupaten(): array
+    public function getSummaryByKabupaten(?int $tahun = null): array
     {
-        return $this->model->getSummaryByKabupaten();
+        if ($tahun === 2025) {
+            return $this->model->getSummaryByKabupaten(2025);
+        }
+        $data = $this->getAccumulatedConditionData($tahun);
+        return $data['summaryByKabupaten'];
+    }
+
+    /**
+     * Ambil ringkasan kemantapan per koridor
+     */
+    public function getSummaryByKoridor(?int $tahun = null): array
+    {
+        if ($tahun === 2025) {
+            return $this->model->getSummaryByKoridor(2025);
+        }
+        $data = $this->getAccumulatedConditionData($tahun);
+        return $data['summaryByKoridor'];
+    }
+
+    /**
+     * Hitung data kondisi akumulatif (Base Survey 2025 + Penanganan <= $tahun)
+     */
+    public function getAccumulatedConditionData(?int $tahun = null): array
+    {
+        $cacheKey = $tahun === null ? 'all' : (string)$tahun;
+        if (isset($this->accumulatedCache[$cacheKey])) {
+            return $this->accumulatedCache[$cacheKey];
+        }
+
+        $ruasModel       = new RuasJalan();
+        $penangananModel = new Penanganan();
+        $prediksiService = new PrediksiService();
+        $ruasList        = $ruasModel->getAll();
+
+        $totalPanjang = 0.0;
+        $totalBaik    = 0.0;
+        $totalSedang  = 0.0;
+        $totalRR      = 0.0;
+        $totalRB      = 0.0;
+
+        $kabMap = [];
+        $korMap = [];
+        $ruasSummary = [];
+
+        foreach ($ruasList as $ruas) {
+            $ruasId      = (int)$ruas['id'];
+            $kabupaten   = !empty($ruas['kabupaten_kota']) ? trim($ruas['kabupaten_kota']) : 'Lainnya';
+            $koridor     = !empty($ruas['koridor']) ? trim($ruas['koridor']) : 'Lainnya';
+            $panjangRuas = (float)$ruas['panjang'];
+
+            if (!isset($kabMap[$kabupaten])) {
+                $kabMap[$kabupaten] = [
+                    'kabupaten_kota'     => $kabupaten,
+                    'total_panjang'      => 0.0,
+                    'total_mantap'       => 0.0,
+                    'total_tidak_mantap' => 0.0,
+                    'total_baik'         => 0.0,
+                    'total_sedang'       => 0.0,
+                    'total_rusak_ringan' => 0.0,
+                    'total_rusak_berat'  => 0.0,
+                ];
+            }
+            if (!isset($korMap[$koridor])) {
+                $korMap[$koridor] = [
+                    'koridor'            => $koridor,
+                    'total_panjang'      => 0.0,
+                    'total_mantap'       => 0.0,
+                    'total_tidak_mantap' => 0.0,
+                ];
+            }
+
+            $stripmapList = $this->model->getByRuasId($ruasId);
+
+            if ($tahun === 2025) {
+                $penangananList = $penangananModel->getByRuasId($ruasId, 2025);
+            } elseif ($tahun !== null && $tahun > 2025) {
+                $penangananList = $penangananModel->getByRuasIdUpTo($ruasId, $tahun);
+            } else {
+                $penangananList = $penangananModel->getByRuasId($ruasId, null);
+            }
+
+            $summary = $prediksiService->hitungSummary($penangananList, $stripmapList);
+            $kondisi = $summary['sesudah'];
+
+            $rBaik   = (float)$kondisi['baik'];
+            $rSedang = (float)$kondisi['sedang'];
+            $rRR     = (float)$kondisi['rusak_ringan'];
+            $rRB     = (float)$kondisi['rusak_berat'];
+            $rMantap = $rBaik + $rSedang;
+            $rTM     = $rRR + $rRB;
+
+            $totalPanjang += $panjangRuas;
+            $totalBaik    += $rBaik;
+            $totalSedang  += $rSedang;
+            $totalRR      += $rRR;
+            $totalRB      += $rRB;
+
+            $kabMap[$kabupaten]['total_panjang']      += $panjangRuas;
+            $kabMap[$kabupaten]['total_mantap']       += $rMantap;
+            $kabMap[$kabupaten]['total_tidak_mantap'] += $rTM;
+            $kabMap[$kabupaten]['total_baik']         += $rBaik;
+            $kabMap[$kabupaten]['total_sedang']       += $rSedang;
+            $kabMap[$kabupaten]['total_rusak_ringan'] += $rRR;
+            $kabMap[$kabupaten]['total_rusak_berat']  += $rRB;
+
+            $korMap[$koridor]['total_panjang']      += $panjangRuas;
+            $korMap[$koridor]['total_mantap']       += $rMantap;
+            $korMap[$koridor]['total_tidak_mantap'] += $rTM;
+
+            $ruasSummary[] = [
+                'id'                 => $ruasId,
+                'kode_ruas'          => $ruas['kode_ruas'],
+                'nama_ruas'          => $ruas['nama_ruas'],
+                'sta_awal'           => $ruas['sta_awal'] ?? 0,
+                'sta_akhir'          => $ruas['sta_akhir'] ?? 0,
+                'total_panjang'      => $panjangRuas,
+                'kabupaten_kota'     => $kabupaten,
+                'koridor'            => $koridor,
+                'panjang'            => $panjangRuas,
+                'baik'               => $rBaik,
+                'sedang'             => $rSedang,
+                'rusak_ringan'       => $rRR,
+                'rusak_berat'        => $rRB,
+                'mantap'             => $rMantap,
+                'tidak_mantap'       => $rTM,
+                'total_terisi'       => $rBaik + $rSedang + $rRR + $rRB,
+                'total_baik'         => $rBaik,
+                'total_sedang'       => $rSedang,
+                'total_rusak_ringan' => $rRR,
+                'total_rusak_berat'  => $rRB,
+                'total_mantap'       => $rMantap,
+                'total_tidak_mantap' => $rTM,
+            ];
+        }
+
+        ksort($kabMap);
+        ksort($korMap);
+
+        $result = [
+            'globalSummary' => [
+                'total_panjang'      => $totalPanjang,
+                'total_baik'         => $totalBaik,
+                'total_sedang'       => $totalSedang,
+                'total_rusak_ringan' => $totalRR,
+                'total_rusak_berat'  => $totalRB,
+                'total_mantap'       => $totalBaik + $totalSedang,
+                'total_tidak_mantap' => $totalRR + $totalRB,
+            ],
+            'summaryByKabupaten' => array_values($kabMap),
+            'summaryByKoridor'   => array_values($korMap),
+            'summaryPerRuas'     => $ruasSummary,
+        ];
+
+        $this->accumulatedCache[$cacheKey] = $result;
+        return $result;
+    }
+
+    /**
+     * Ambil daftar tahun tersedia di tabel stripmap
+     */
+    public function getAvailableYears(): array
+    {
+        return $this->model->getAvailableYears();
     }
 
     /**
@@ -270,13 +445,5 @@ class StripmapService
         }
 
         return $errors;
-    }
-
-    /**
-     * Ambil ringkasan kemantapan per koridor
-     */
-    public function getSummaryByKoridor(): array
-    {
-        return $this->model->getSummaryByKoridor();
     }
 }

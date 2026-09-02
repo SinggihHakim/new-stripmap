@@ -1,4 +1,4 @@
-<!-- ============================================================ -->
+﻿<!-- ============================================================ -->
 <!-- Halaman Daftar Strip Map & Perkerasan per Ruas               -->
 <!-- ============================================================ -->
 
@@ -35,6 +35,13 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                 </svg>
                 Preview Mode
+            </a>
+            <a href="<?= base_url('stripmap/compare/' . $ruas['id']) ?>"
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white text-sm font-medium rounded-xl hover:bg-violet-700 transition-colors shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                Perbandingan Tahun
             </a>
             <?php endif; ?>
             <label class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700 transition-colors shadow-sm cursor-pointer">
@@ -97,13 +104,17 @@
     </div>
 
     <!-- Strip Map & Perkerasan Visual Preview Partial -->
-    <?php if (!empty($stripmaps) || !empty($perkerasans)): ?>
+    <?php if (!empty($stripmaps) || !empty($perkerasans) || !empty($penanganans)): ?>
         <?php view('stripmap._visual', [
             'stripmaps'         => $stripmaps,
             'summary'           => $summary,
             'ruas'              => $ruas,
             'perkerasans'       => $perkerasans ?? [],
-            'summaryPerkerasan' => $summaryPerkerasan ?? []
+            'summaryPerkerasan' => $summaryPerkerasan ?? [],
+            'fotoLapangans'     => $fotoLapangans ?? [],
+            'penanganans'       => $penanganans ?? [],
+            'penangananSummary' => $penangananSummary ?? [],
+            'penangananYears'   => $penangananYears ?? []
         ]); ?>
     <?php endif; ?>
 
@@ -559,7 +570,7 @@
         const condOrder  = ['baik', 'sedang', 'rusak_ringan', 'rusak_berat'];
 
         const paveColors = { rigid: '#6b7280', aspal: '#111827', agregat_tanah: '#7c461b', belum_tembus: '#7c3aed' };
-        const paveLabels = { rigid: 'Rigid (Beton)', aspal: 'Aspal', agregat_tanah: 'Agregat / Tanah', belum_tembus: 'Belum Tembus' };
+        const paveLabels = { rigid: 'Rigid (Beton)', aspal: 'Aspal', agregat_tanah: 'Kerikil', belum_tembus: 'Belum Tembus' };
 
         const staFmt = m => {
             const km = Math.floor(m / 1000);
@@ -1038,7 +1049,7 @@
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Panjang</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Rigid</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-slate-900 uppercase tracking-wider">Aspal</th>
-                        <th class="px-4 py-3 text-center text-xs font-semibold text-amber-800 uppercase tracking-wider">Agregat / Tanah</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-amber-800 uppercase tracking-wider">Kerikil</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-purple-700 uppercase tracking-wider">Belum Tembus</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Aksi</th>
                     </tr>

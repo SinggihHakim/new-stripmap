@@ -145,7 +145,7 @@ class Stripmap
     /**
      * Ambil ringkasan kondisi untuk seluruh ruas jalan di database (Global)
      */
-    public function getGlobalSummary(?array $ruasIds = null): array
+    public function getGlobalSummary(?array $ruasIds = null, ?int $tahun = null): array
     {
         if ($ruasIds !== null && empty($ruasIds)) {
             return [
@@ -157,19 +157,25 @@ class Stripmap
             ];
         }
 
-        $whereClause = '';
+        $conditions = [];
         if ($ruasIds !== null) {
             $inQuery = implode(',', array_map('intval', $ruasIds));
-            $whereClause = " WHERE ruas_id IN ($inQuery)";
+            $conditions[] = "ruas_id IN ($inQuery)";
         }
+        if ($tahun !== null) {
+            $conditions[] = "tahun = " . (int)$tahun;
+        }
+        $whereClause = $conditions ? ' WHERE ' . implode(' AND ', $conditions) : '';
 
         $stmt = $this->db->query(
             "SELECT
-                SUM(panjang)       as total_panjang,
-                SUM(baik)          as total_baik,
-                SUM(sedang)        as total_sedang,
-                SUM(rusak_ringan)  as total_rusak_ringan,
-                SUM(rusak_berat)   as total_rusak_berat
+                SUM(panjang)                    as total_panjang,
+                SUM(baik)                       as total_baik,
+                SUM(sedang)                     as total_sedang,
+                SUM(rusak_ringan)               as total_rusak_ringan,
+                SUM(rusak_berat)                as total_rusak_berat,
+                SUM(baik + sedang)              as total_mantap,
+                SUM(rusak_ringan + rusak_berat) as total_tidak_mantap
              FROM stripmap" . $whereClause
         );
         return $stmt->fetch() ?: [
@@ -178,15 +184,29 @@ class Stripmap
             'total_sedang'        => 0,
             'total_rusak_ringan'  => 0,
             'total_rusak_berat'   => 0,
+            'total_mantap'        => 0,
+            'total_tidak_mantap'  => 0,
         ];
+    }
+
+    /**
+     * Ambil daftar tahun yang tersedia di tabel stripmap
+     */
+    public function getAvailableYears(): array
+    {
+        $stmt = $this->db->query(
+            'SELECT DISTINCT tahun FROM stripmap WHERE tahun IS NOT NULL ORDER BY tahun DESC'
+        );
+        return array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'tahun');
     }
 
     /**
      * Ambil ringkasan kemantapan (mantap vs tidak mantap) per kabupaten/kota
      * digunakan untuk line chart perbandingan di dashboard
      */
-    public function getSummaryByKabupaten(): array
+    public function getSummaryByKabupaten(?int $tahun = null): array
     {
+        $tahunWhere = $tahun !== null ? 'AND s.tahun = ' . (int)$tahun : '';
         $sql = "SELECT
                     r.kabupaten_kota,
                     COALESCE(SUM(s.panjang), 0)                              AS total_panjang,
@@ -197,7 +217,7 @@ class Stripmap
                     COALESCE(SUM(s.rusak_ringan), 0)                        AS total_rusak_ringan,
                     COALESCE(SUM(s.rusak_berat), 0)                         AS total_rusak_berat
                 FROM ruas_jalan r
-                LEFT JOIN stripmap s ON r.id = s.ruas_id
+                LEFT JOIN stripmap s ON r.id = s.ruas_id $tahunWhere
                 WHERE r.kabupaten_kota IS NOT NULL AND r.kabupaten_kota != ''
                 GROUP BY r.kabupaten_kota
                 ORDER BY r.kabupaten_kota ASC";
@@ -208,15 +228,16 @@ class Stripmap
     /**
      * Ambil ringkasan kemantapan per koridor
      */
-    public function getSummaryByKoridor(): array
+    public function getSummaryByKoridor(?int $tahun = null): array
     {
+        $tahunWhere = $tahun !== null ? 'AND s.tahun = ' . (int)$tahun : '';
         $sql = "SELECT
                     r.koridor,
                     COALESCE(SUM(s.panjang), 0)                       AS total_panjang,
                     COALESCE(SUM(s.baik + s.sedang), 0)              AS total_mantap,
                     COALESCE(SUM(s.rusak_ringan + s.rusak_berat), 0) AS total_tidak_mantap
                 FROM ruas_jalan r
-                LEFT JOIN stripmap s ON r.id = s.ruas_id
+                LEFT JOIN stripmap s ON r.id = s.ruas_id $tahunWhere
                 WHERE r.koridor IS NOT NULL AND r.koridor != ''
                 GROUP BY r.koridor
                 ORDER BY r.koridor ASC";

@@ -1,4 +1,4 @@
-<!-- ============================================================ -->
+﻿<!-- ============================================================ -->
 <!-- Dashboard -->
 <!-- ============================================================ -->
 
@@ -7,21 +7,46 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <div class="flex items-center gap-3">
+                <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+                <?php if (!empty($selectedTahun)): ?>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 shadow-sm">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
+                        Tahun <?= (int)$selectedTahun ?>
+                    </span>
+                <?php endif; ?>
+            </div>
             <p class="mt-1 text-sm text-gray-500">Ringkasan data ruas jalan, strip map, jenis perkerasan, dan segmentasi penanganan.</p>
         </div>
-        <!-- Filter Tahun Penanganan Global -->
-        <?php if (!empty($penangananStats['all_years'])): ?>
-        <form method="GET" action="<?= base_url('dashboard') ?>" class="flex items-center gap-2">
-            <span class="text-xs font-semibold text-gray-600">Tahun Penanganan:</span>
-            <select name="tahun" onchange="this.form.submit()" class="text-xs rounded-xl border border-gray-300 bg-white px-3 py-2 font-semibold text-gray-800 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm transition-colors cursor-pointer">
-                <option value="all" <?= (empty($selectedTahun) || $selectedTahun === 'all') ? 'selected' : '' ?>>Semua Tahun</option>
-                <?php foreach ($penangananStats['all_years'] as $yr): ?>
-                    <option value="<?= $yr ?>" <?= ($selectedTahun == $yr) ? 'selected' : '' ?>>Tahun <?= $yr ?></option>
-                <?php endforeach; ?>
-            </select>
-        </form>
-        <?php endif; ?>
+        
+        <!-- Filter Tahun Dropdown -->
+        <div class="flex items-center gap-2.5">
+            <?php if (!empty($availableTahun)): ?>
+            <form method="GET" action="<?= base_url('dashboard') ?>" class="flex items-center">
+                <div class="relative">
+                    <select name="tahun" onchange="this.form.submit()"
+                            class="appearance-none pl-9 pr-9 py-2.5 text-xs font-semibold bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all cursor-pointer">
+                        <option value="">🗓 Semua Tahun</option>
+                        <?php foreach ($availableTahun as $thn): ?>
+                            <option value="<?= (int)$thn ?>" <?= (!empty($selectedTahun) && (int)$selectedTahun === (int)$thn) ? 'selected' : '' ?>>
+                                Tahun <?= (int)$thn ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <div class="pointer-events-none absolute inset-y-0 right-2.5 flex items-center">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                </div>
+            </form>
+            <?php endif; ?>
+        </div>
     </div>
 
     <!-- Load Chart.js CDN -->
@@ -67,9 +92,10 @@
             </div>
 
             <!-- Row 2: 4 Grid (Detail Kondisi Segmen: Baik, Sedang, Rusak Ringan, Rusak Berat) -->
+            <?php $thnQuery = !empty($selectedTahun) ? '&tahun=' . (int)$selectedTahun : ''; ?>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <!-- Card 3: Baik -->
-                <a href="<?= base_url('dashboard/detail?kondisi=baik') ?>" 
+                <a href="<?= base_url('dashboard/detail?kondisi=baik' . $thnQuery) ?>" 
                    title="Klik untuk melihat detail ruas jalan kondisi Baik"
                    class="p-4 rounded-xl border shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5 group cursor-pointer block" 
                    style="background-color: #f0fdf4; border-color: #d1fae5;">
@@ -89,7 +115,7 @@
                 </a>
 
                 <!-- Card 4: Sedang -->
-                <a href="<?= base_url('dashboard/detail?kondisi=sedang') ?>" 
+                <a href="<?= base_url('dashboard/detail?kondisi=sedang' . $thnQuery) ?>" 
                    title="Klik untuk melihat detail ruas jalan kondisi Sedang"
                    class="p-4 rounded-xl border shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5 group cursor-pointer block" 
                    style="background-color: #fefce8; border-color: #fef08a;">
@@ -109,7 +135,7 @@
                 </a>
 
                 <!-- Card 5: Rusak Ringan -->
-                <a href="<?= base_url('dashboard/detail?kondisi=rusak_ringan') ?>" 
+                <a href="<?= base_url('dashboard/detail?kondisi=rusak_ringan' . $thnQuery) ?>" 
                    title="Klik untuk melihat detail ruas jalan kondisi Rusak Ringan (Terpanjang ke Terpendek)"
                    class="p-4 rounded-xl border shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5 group cursor-pointer block ring-2 ring-orange-400/40" 
                    style="background-color: #fff7ed; border-color: #ffedd5;">
@@ -129,7 +155,7 @@
                 </a>
 
                 <!-- Card 6: Rusak Berat -->
-                <a href="<?= base_url('dashboard/detail?kondisi=rusak_berat') ?>" 
+                <a href="<?= base_url('dashboard/detail?kondisi=rusak_berat' . $thnQuery) ?>" 
                    title="Klik untuk melihat detail ruas jalan kondisi Rusak Berat (Terpanjang ke Terpendek)"
                    class="p-4 rounded-xl border shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5 group cursor-pointer block ring-2 ring-red-400/40" 
                    style="background-color: #fef2f2; border-color: #fee2e2;">
@@ -152,7 +178,7 @@
             <!-- Row 3: 2 Grid (Kemantapan Jalan: Mantap vs Tidak Mantap) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <!-- Card 7: Mantap -->
-                <a href="<?= base_url('dashboard/detail?kondisi=mantap') ?>" 
+                <a href="<?= base_url('dashboard/detail?kondisi=mantap' . $thnQuery) ?>" 
                    title="Klik untuk melihat detail ruas jalan Mantap"
                    class="p-4 rounded-xl border shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5 group cursor-pointer block" 
                    style="background-color: #f0fdf4; border-color: #d1fae5;">
@@ -172,7 +198,7 @@
                 </a>
 
                 <!-- Card 8: Tidak Mantap -->
-                <a href="<?= base_url('dashboard/detail?kondisi=tidak_mantap') ?>" 
+                <a href="<?= base_url('dashboard/detail?kondisi=tidak_mantap' . $thnQuery) ?>" 
                    title="Klik untuk melihat detail ruas jalan Tidak Mantap"
                    class="p-4 rounded-xl border shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5 group cursor-pointer block" 
                    style="background-color: #fff1f2; border-color: #ffe4e6;">
@@ -192,7 +218,7 @@
                 </a>
             </div>
 
-            <!-- Row 4: 4 Grid (Detail Jenis Perkerasan Jalan: Rigid, Aspal, Agregat/Tanah, Belum Tembus) -->
+            <!-- Row 4: 4 Grid (Detail Jenis Perkerasan Jalan: Rigid, Aspal, Kerikil, Belum Tembus) -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <!-- Card 9: Rigid -->
                 <div class="p-4 rounded-xl border shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5" style="background-color: #475569; border-color: #334155;">
@@ -224,12 +250,12 @@
                     <p class="text-[11px] font-medium text-slate-300 mt-0.5">Flexible / Aspal</p>
                 </div>
 
-                <!-- Card 11: Agregat / Tanah -->
+                <!-- Card 11: Kerikil -->
                 <div class="p-4 rounded-xl border shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5" style="background-color: #7c461b; border-color: #5c3211;">
                     <div class="flex items-center justify-between mb-2">
                         <div class="flex items-center gap-1.5">
                             <span class="w-2.5 h-2.5 rounded-full" style="background-color: #fde047; display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;"></span>
-                            <span data-dashboard-export-dot-label class="text-xs font-semibold text-white">Agregat/Tanah</span>
+                            <span data-dashboard-export-dot-label class="text-xs font-semibold text-white">Kerikil</span>
                         </div>
                         <span data-dashboard-export-percent-badge class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold" style="background-color: rgba(0, 0, 0, 0.25); color: #ffffff;">
                             <?= format_number($pctAgregatTanah ?? 0.0, 1) ?>%
@@ -784,7 +810,7 @@
 
         window.chartKab     = initStackedBarChart('kabupatenBarChart', rawKab, false);
         window.chartKoridor = initStackedBarChart('koridorBarChart', rawKor, false);
-        window.chartUptd    = initStackedBarChart('uptdBarChart', rawUpt, true);
+        window.chartUptd    = initStackedBarChart('uptdBarChart', rawUpt, false);
 
         if (window.chartKab) window.chartKab.sort('desc');
         if (window.chartKoridor) window.chartKoridor.sort('desc');

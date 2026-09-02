@@ -8,32 +8,15 @@
 // Helper: format km
 $fkm = fn($v) => number_format((float)$v, 2, ',', '.');
 
-// Encode data untuk chart
-$chartLabels  = [];
-$chartSebelumBaik   = [];
-$chartSebelumSedang = [];
-$chartSebelumRR     = [];
-$chartSebelumRB     = [];
-$chartSesudahBaik   = [];
-$chartSesudahSedang = [];
-$chartSesudahRR     = [];
-$chartSesudahRB     = [];
-
-foreach ($perRuas as $r) {
-    if (!$r['ada_penanganan']) continue; // hanya tampilkan ruas yang ada penanganan
-    $chartLabels[]        = $r['kode_ruas'];
-    $chartSebelumBaik[]   = $r['sebelum']['baik_km'];
-    $chartSebelumSedang[] = $r['sebelum']['sedang_km'];
-    $chartSebelumRR[]     = $r['sebelum']['rusak_ringan_km'];
-    $chartSebelumRB[]     = $r['sebelum']['rusak_berat_km'];
-    $chartSesudahBaik[]   = $r['sesudah']['baik_km'];
-    $chartSesudahSedang[] = $r['sesudah']['sedang_km'];
-    $chartSesudahRR[]     = $r['sesudah']['rusak_ringan_km'];
-    $chartSesudahRB[]     = $r['sesudah']['rusak_berat_km'];
-}
-
 $mantapDelta = round($totalSesudah['pct_mantap'] - $totalSebelum['pct_mantap'], 1);
 $deltaPositif = $mantapDelta >= 0;
+
+$mantapDeltaKm = round($totalSesudah['mantap_km'] - $totalSebelum['mantap_km'], 2);
+$deltaKmPositif = $mantapDeltaKm >= 0;
+
+$tidakMantapDeltaPct = round($totalSesudah['pct_tidak_mantap'] - $totalSebelum['pct_tidak_mantap'], 1);
+$tidakMantapDeltaKm  = round($totalSesudah['tidak_mantap_km'] - $totalSebelum['tidak_mantap_km'], 2);
+
 ?>
 
 <!-- Load Chart.js CDN -->
@@ -41,6 +24,13 @@ $deltaPositif = $mantapDelta >= 0;
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 
 <script>
+window.changePrediksiParam = function(key, val) {
+    var searchParams = new window.URLSearchParams(window.location.search);
+    searchParams.delete('tahun'); // Hapus legacy parameter agar tidak tumpang tindih
+    searchParams.set(key, val);
+    window.location.search = searchParams.toString();
+};
+
 document.addEventListener('alpine:init', () => {
     Alpine.data('prediksiChart', () => ({
         chartRendered: false,
@@ -54,7 +44,6 @@ document.addEventListener('alpine:init', () => {
             Chart.register(ChartDataLabels);
             this.chartRendered = true;
             this.$nextTick(() => {
-                this.renderKomparChart();
                 this.renderDistribusiBar();
                 this.renderKemantapanBar();
                 this.renderMultiTahunBar();
@@ -134,37 +123,6 @@ document.addEventListener('alpine:init', () => {
                 }
             });
         },
-        renderKomparChart() {
-            const ctx = document.getElementById('chartKomparasi');
-            if (!ctx) return;
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: <?= json_encode($chartLabels) ?>,
-                    datasets: [
-                        { label: 'Sebelum \u2014 Baik', data: <?= json_encode($chartSebelumBaik) ?>, backgroundColor: 'rgba(34,197,94,0.85)', borderColor: '#16a34a', borderWidth: 1, borderRadius: 3, stack: 'sebelum' },
-                        { label: 'Sebelum \u2014 Sedang', data: <?= json_encode($chartSebelumSedang) ?>, backgroundColor: 'rgba(234,179,8,0.85)', borderColor: '#ca8a04', borderWidth: 1, borderRadius: 3, stack: 'sebelum' },
-                        { label: 'Sebelum \u2014 Rusak Ringan', data: <?= json_encode($chartSebelumRR) ?>, backgroundColor: 'rgba(249,115,22,0.85)', borderColor: '#ea580c', borderWidth: 1, borderRadius: 3, stack: 'sebelum' },
-                        { label: 'Sebelum \u2014 Rusak Berat', data: <?= json_encode($chartSebelumRB) ?>, backgroundColor: 'rgba(239,68,68,0.85)', borderColor: '#dc2626', borderWidth: 1, borderRadius: 3, stack: 'sebelum' },
-                        { label: 'Prediksi \u2014 Baik', data: <?= json_encode($chartSesudahBaik) ?>, backgroundColor: 'rgba(34,197,94,0.35)', borderColor: '#16a34a', borderWidth: 2, borderRadius: 3, stack: 'sesudah' },
-                        { label: 'Prediksi \u2014 Sedang', data: <?= json_encode($chartSesudahSedang) ?>, backgroundColor: 'rgba(234,179,8,0.35)', borderColor: '#ca8a04', borderWidth: 2, borderRadius: 3, stack: 'sesudah' },
-                        { label: 'Prediksi \u2014 Rusak Ringan', data: <?= json_encode($chartSesudahRR) ?>, backgroundColor: 'rgba(249,115,22,0.35)', borderColor: '#ea580c', borderWidth: 2, borderRadius: 3, stack: 'sesudah' },
-                        { label: 'Prediksi \u2014 Rusak Berat', data: <?= json_encode($chartSesudahRB) ?>, backgroundColor: 'rgba(239,68,68,0.35)', borderColor: '#dc2626', borderWidth: 2, borderRadius: 3, stack: 'sesudah' },
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 12, boxWidth: 12, boxHeight: 12 } },
-                        tooltip: { callbacks: { label: function(ctx) { return ' ' + ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + ' km'; } } }
-                    },
-                    scales: {
-                        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } },
-                        y: { stacked: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 }, callback: function(v) { return v + ' km'; } }, title: { display: true, text: 'Panjang (km)', font: { size: 11 } } }
-                    }
-                }
-            });
-        },
         renderDistribusiBar() {
             const ctx = document.getElementById('chartDistribusiBar');
             if (!ctx) return;
@@ -226,11 +184,10 @@ document.addEventListener('alpine:init', () => {
         renderKemantapanBar() {
             const ctx = document.getElementById('chartKemantapanBar');
             if (!ctx) return;
-            const tahun = <?= (int)$tahunPenanganan ?>;
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['n-1 (Data Saat Ini)', 'n (Prediksi <?= (int)$tahunPenanganan ?>)'],
+                    labels: ['Saat Ini (n-1)', 'Prediksi (n) (<?= $tahunSummaryRaw === 'semua' ? 'Semua Tahun' : 'Tahun ' . (int)$tahunSummaryRaw ?>)'],
                     datasets: [
                         {
                             label: 'Kemantapan (%)',
@@ -290,22 +247,22 @@ document.addEventListener('alpine:init', () => {
             </div>
             <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
                 <span>Prediksi Kondisi Jalan Setelah Penanganan</span>
-                <span class="text-xs px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 font-semibold border border-purple-200">Tahun <?= $tahunPenanganan ?></span>
+                <span class="text-xs px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 font-semibold border border-purple-200"><?= $tahunSummaryRaw === 'semua' ? 'Semua Tahun (' . TahunHelper::awal() . '–' . TahunHelper::akhir() . ')' : 'Tahun ' . $tahunSummaryRaw ?></span>
             </h1>
             <p class="text-xs text-gray-500 mt-1">Prediksi kondisi jalan berdasarkan matriks penanganan (Ide Strip Map). Warna solid = kondisi saat ini (n-1), transparan = prediksi setelah penanganan (n).</p>
         </div>
 
-        <!-- Filter Tahun -->
-        <form method="GET" action="" class="flex items-center gap-2">
-            <label class="text-xs font-semibold text-gray-600">Tahun Penanganan:</label>
-            <select name="tahun" onchange="this.form.submit()"
-                class="text-sm font-semibold border border-gray-300 rounded-xl px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="semua" <?= $tahunPenanganan === 'semua' ? 'selected' : '' ?>>🗓 Semua Tahun</option>
-                <?php foreach (range(2025, 2030) as $y): ?>
-                    <option value="<?= $y ?>" <?= $y == $tahunPenanganan ? 'selected' : '' ?>><?= $y ?></option>
+        <!-- Filter Tahun Penanganan (Grid Atas) -->
+        <div class="flex items-center gap-2">
+            <label class="text-xs font-semibold text-gray-600">Tahun Ringkasan:</label>
+            <select onchange="window.changePrediksiParam('tahun_summary', this.value)"
+                class="text-sm font-semibold border border-gray-300 rounded-xl px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs cursor-pointer">
+                <option value="semua" <?= $tahunSummaryRaw === 'semua' ? 'selected' : '' ?>>🗓 Semua Tahun</option>
+                <?php foreach (TahunHelper::getList() as $y): ?>
+                    <option value="<?= $y ?>" <?= $y == $tahunSummaryRaw ? 'selected' : '' ?>><?= $y ?></option>
                 <?php endforeach; ?>
             </select>
-        </form>
+        </div>
     </div>
 
     <?php if ($modeSemua): ?>
@@ -314,9 +271,9 @@ document.addEventListener('alpine:init', () => {
         <div class="flex items-start justify-between mb-5">
             <div>
                 <h3 class="text-sm font-bold text-gray-800">Kemantapan Jaringan Jalan — Semua Tahun Penanganan</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Perbandingan kemantapan <strong>saat ini / target (n-1)</strong> vs <strong>prediksi setelah penanganan (n)</strong> untuk setiap tahun (2025–2030).</p>
+                <p class="text-xs text-gray-500 mt-0.5">Perbandingan kemantapan <strong>saat ini / target (n-1)</strong> vs <strong>prediksi setelah penanganan (n)</strong> untuk setiap tahun (<?= TahunHelper::awal() ?>–<?= TahunHelper::akhir() ?>).</p>
             </div>
-            <span class="shrink-0 text-xs px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 font-semibold border border-indigo-200">2025 – 2030</span>
+            <span class="shrink-0 text-xs px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 font-semibold border border-indigo-200"><?= TahunHelper::awal() ?> – <?= TahunHelper::akhir() ?></span>
         </div>
         <div class="relative" style="height: 320px">
             <canvas id="chartMultiTahun"></canvas>
@@ -441,7 +398,7 @@ document.addEventListener('alpine:init', () => {
         <div class="flex items-start justify-between mb-4">
             <div>
                 <h3 class="text-sm font-bold text-gray-800">Distribusi Kondisi Jalan: Saat Ini vs Prediksi</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Perbandingan panjang jalan per kondisi sebelum dan setelah penanganan tahun <?= $tahunPenanganan ?>.</p>
+                <p class="text-xs text-gray-500 mt-0.5">Perbandingan panjang jalan per kondisi sebelum dan setelah penanganan <?= $tahunSummaryRaw === 'semua' ? 'seluruh tahun' : 'tahun ' . $tahunSummaryRaw ?>.</p>
             </div>
             <div class="flex items-center gap-3 text-xs">
                 <div class="flex items-center gap-1.5">
@@ -459,43 +416,38 @@ document.addEventListener('alpine:init', () => {
         </div>
     </div>
 
-    <!-- Bar Chart Komparasi Per Ruas -->
-    <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
-        <div class="flex items-start justify-between mb-4">
-            <div>
-                <h3 class="text-sm font-bold text-gray-800">Komparasi Kondisi Per Ruas Jalan</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Hanya ruas yang memiliki data penanganan tahun <?= $tahunPenanganan ?> yang ditampilkan.</p>
-            </div>
-            <div class="flex items-center gap-3 text-xs">
-                <div class="flex items-center gap-1.5">
-                    <div class="w-3 h-3 rounded bg-green-500 opacity-90"></div>
-                    <span class="text-gray-600 font-medium">Solid = Saat Ini</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <div class="w-3 h-3 rounded border-2 border-green-500 bg-green-200/40"></div>
-                    <span class="text-gray-600 font-medium">Transparan = Prediksi</span>
-                </div>
-            </div>
-        </div>
-        <?php if (empty($chartLabels)): ?>
-            <div class="flex flex-col items-center justify-center h-48 text-center">
-                <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                <p class="text-sm font-semibold text-gray-500">Belum ada data penanganan untuk tahun <?= $tahunPenanganan ?></p>
-                <p class="text-xs text-gray-400 mt-1">Tambahkan data penanganan dan pilih <strong>Jenis Pelaksana</strong> pada halaman Strip Map.</p>
-            </div>
-        <?php else: ?>
-            <div class="relative h-80">
-                <canvas id="chartKomparasi"></canvas>
-            </div>
-        <?php endif; ?>
-    </div>
-
     <!-- Tabel Detail Per Ruas -->
-    <div class="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden">
-        <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+    <div class="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden"
+         x-data="{ tableUnit: 'pct', selectedRuas: '' }">
+        <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h3 class="text-sm font-bold text-gray-800">Detail Per Ruas Jalan</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Perbandingan kemantapan sebelum dan prediksi sesudah penanganan per ruas.</p>
+                <p class="text-xs text-gray-500 mt-0.5">Perbandingan kemantapan kondisi baseline dan prediksi sesudah penanganan per ruas jalan.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <!-- Dropdown Filter Ruas Jalan -->
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs font-semibold text-gray-500 whitespace-nowrap">Pilih Ruas:</label>
+                    <select x-model="selectedRuas"
+                            class="text-xs font-semibold border border-gray-300 rounded-xl px-3 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs max-w-xs">
+                        <option value="">Semua Ruas Jalan (<?= count($perRuas) ?> Ruas)</option>
+                        <?php foreach ($perRuas as $r): ?>
+                            <option value="<?= $r['id'] ?>"><?= htmlspecialchars($r['kode_ruas']) ?> - <?= htmlspecialchars($r['nama_ruas']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <!-- Toggle Slider km / % -->
+                <div class="relative flex items-center bg-gray-100 rounded-lg p-0.5" style="width: 72px;">
+                    <span class="absolute top-0.5 bottom-0.5 w-[34px] rounded-md bg-white shadow-sm transition-all duration-200 ease-in-out"
+                          :style="tableUnit === 'km' ? 'left: 2px;' : 'left: 36px;'"></span>
+                    <button type="button" @click="tableUnit = 'km'" title="Tampilkan dalam Kilometer (km)"
+                            class="relative z-10 flex-1 py-1 text-[11px] font-semibold rounded-md transition-colors duration-200"
+                            :class="tableUnit === 'km' ? 'text-gray-900 font-bold' : 'text-gray-400'">km</button>
+                    <button type="button" @click="tableUnit = 'pct'" title="Tampilkan dalam Persentase (%)"
+                            class="relative z-10 flex-1 py-1 text-[11px] font-semibold rounded-md transition-colors duration-200"
+                            :class="tableUnit === 'pct' ? 'text-gray-900 font-bold' : 'text-gray-400'">%</button>
+                </div>
             </div>
         </div>
         <div class="overflow-x-auto">
@@ -504,205 +456,204 @@ document.addEventListener('alpine:init', () => {
                     <tr>
                         <th class="px-4 py-3 text-left font-bold text-gray-600 uppercase tracking-wider">Kode / Nama Ruas</th>
                         <th class="px-4 py-3 text-center font-bold text-gray-600 uppercase tracking-wider">Panjang</th>
-                        <th class="px-4 py-3 text-center font-bold text-gray-600 uppercase tracking-wider bg-amber-50 border-l border-amber-100" colspan="2">Kondisi Saat Ini (n-1)</th>
-                        <th class="px-4 py-3 text-center font-bold text-purple-600 uppercase tracking-wider bg-purple-50 border-l border-purple-100" colspan="2">Prediksi Sesudah (n)</th>
-                        <th class="px-4 py-3 text-center font-bold text-gray-600 uppercase tracking-wider">Penanganan</th>
+                        
+                        <!-- Dropdown Tahun Kondisi Baseline (n-1) -->
+                        <th class="px-4 py-2.5 text-center bg-amber-50/90 border-l border-amber-100" colspan="2">
+                            <div class="inline-flex items-center justify-center gap-1.5 py-0.5">
+                                <span class="font-bold text-amber-900 uppercase tracking-wider text-[11px]">Kondisi:</span>
+                                <select onchange="window.changePrediksiParam('tahun_baseline', this.value)"
+                                        class="text-xs font-bold border border-amber-300 rounded-lg px-2 py-0.5 bg-white text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs cursor-pointer">
+                                    <?php foreach (TahunHelper::getList() as $y): ?>
+                                        <option value="<?= $y ?>" <?= $y == ($tahunBaseline ?? 2025) ? 'selected' : '' ?>>Tahun <?= $y ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </th>
+                        
+                        <!-- Dropdown Tahun Prediksi Sesudah (n) -->
+                        <th class="px-4 py-2.5 text-center bg-purple-50/90 border-l border-purple-100" colspan="2">
+                            <div class="inline-flex items-center justify-center gap-1.5 py-0.5">
+                                <span class="font-bold text-purple-900 uppercase tracking-wider text-[11px]">Prediksi:</span>
+                                <select onchange="window.changePrediksiParam('tahun_prediksi', this.value)"
+                                        class="text-xs font-bold border border-purple-300 rounded-lg px-2 py-0.5 bg-white text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-2xs cursor-pointer">
+                                    <option value="semua" <?= ($tahunPrediksiRaw ?? '') === 'semua' ? 'selected' : '' ?>>🗓 Semua Tahun</option>
+                                    <?php foreach (TahunHelper::getList() as $y): ?>
+                                        <option value="<?= $y ?>" <?= $y == ($tahunPrediksiRaw ?? '') ? 'selected' : '' ?>>Tahun <?= $y ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </th>
+                        
+                        <!-- Kolom Selisih / Gap -->
+                        <th class="px-4 py-2.5 text-center font-bold text-indigo-900 uppercase tracking-wider bg-indigo-50/90 border-l border-indigo-100">
+                            <div>Selisih / Gap</div>
+                            <div class="text-[10px] text-indigo-600 font-semibold lowercase tracking-normal mt-0.5">(prediksi − target)</div>
+                        </th>
                     </tr>
-                    <tr class="text-[10px] text-gray-500">
-                        <th class="px-4 py-2"></th>
-                        <th class="px-4 py-2 text-center">km</th>
-                        <th class="px-4 py-2 text-center bg-amber-50 border-l border-amber-100">Mantap %</th>
-                        <th class="px-4 py-2 text-center bg-amber-50">Rusak Berat km</th>
-                        <th class="px-4 py-2 text-center bg-purple-50 border-l border-purple-100">Mantap %</th>
-                        <th class="px-4 py-2 text-center bg-purple-50">Rusak Berat km</th>
-                        <th class="px-4 py-2 text-center">Segmen</th>
+                    <tr class="text-[10px] text-gray-500 font-semibold">
+                        <th class="px-4 py-2 text-left"></th>
+                        <th class="px-4 py-2 text-center text-gray-600">km</th>
+                        <!-- Sebelum -->
+                        <th class="px-4 py-2 text-center bg-amber-50/60 border-l border-amber-100 text-emerald-700">
+                            <span x-show="tableUnit === 'pct'">Mantap (%)</span>
+                            <span x-show="tableUnit === 'km'" x-cloak>Mantap (km)</span>
+                        </th>
+                        <th class="px-4 py-2 text-center bg-amber-50/60 text-rose-700">
+                            <span x-show="tableUnit === 'pct'">Tidak Mantap (%)</span>
+                            <span x-show="tableUnit === 'km'" x-cloak>Tidak Mantap (km)</span>
+                        </th>
+                        <!-- Sesudah -->
+                        <th class="px-4 py-2 text-center bg-purple-50/60 border-l border-purple-100 text-emerald-700">
+                            <span x-show="tableUnit === 'pct'">Mantap (%)</span>
+                            <span x-show="tableUnit === 'km'" x-cloak>Mantap (km)</span>
+                        </th>
+                        <th class="px-4 py-2 text-center bg-purple-50/60 text-rose-700">
+                            <span x-show="tableUnit === 'pct'">Tidak Mantap (%)</span>
+                            <span x-show="tableUnit === 'km'" x-cloak>Tidak Mantap (km)</span>
+                        </th>
+                        <th class="px-4 py-2 text-center bg-indigo-50/60 border-l border-indigo-100 text-indigo-700 font-bold">
+                            Prediksi − Target (Δ)
+                        </th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     <?php foreach ($perRuas as $r): ?>
-                    <tr class="hover:bg-gray-50/80 transition-colors <?= !$r['ada_penanganan'] ? 'opacity-50' : '' ?>">
+                    <?php
+                    // Sebelum
+                    $pctM   = $r['sebelum']['pct_mantap'];
+                    $pctTM  = $r['sebelum']['pct_tidak_mantap'];
+                    $kmM    = $r['sebelum']['mantap_km'];
+                    $kmTM   = $r['sebelum']['tidak_mantap_km'];
+                    $colorM = $pctM >= 80 ? 'text-emerald-700' : ($pctM >= 60 ? 'text-amber-700' : 'text-rose-700');
+
+                    // Sesudah
+                    $pctMS   = $r['sesudah']['pct_mantap'];
+                    $pctTMS  = $r['sesudah']['pct_tidak_mantap'];
+                    $kmMS    = $r['sesudah']['mantap_km'];
+                    $kmTMS   = $r['sesudah']['tidak_mantap_km'];
+                    $colorMS = $pctMS >= 80 ? 'text-emerald-700' : ($pctMS >= 60 ? 'text-amber-700' : 'text-rose-700');
+
+                    // Deltas (Prediksi dikurangi Target/Baseline)
+                    $deltaPctM  = round($pctMS - $pctM, 1);
+                    $deltaKmM   = round($kmMS - $kmM, 2);
+                    $deltaPctTM = round($pctTMS - $pctTM, 1);
+                    $deltaKmTM  = round($kmTMS - $kmTM, 2);
+                    ?>
+                    <tr x-show="!selectedRuas || selectedRuas == '<?= $r['id'] ?>'"
+                        class="hover:bg-gray-50/80 transition-colors <?= !$r['ada_penanganan'] ? 'opacity-50' : '' ?>">
                         <td class="px-4 py-3">
-                            <a href="<?= base_url('rekap/prediksi/' . $r['id'] . '?tahun=' . $tahunPenanganan) ?>"
+                            <a href="<?= base_url('rekap/prediksi/' . $r['id'] . '?tahun=' . $tahunPrediksiRaw) ?>"
                                class="font-bold text-blue-600 hover:underline"><?= htmlspecialchars($r['kode_ruas']) ?></a>
                             <p class="text-gray-500 mt-0.5 line-clamp-1"><?= htmlspecialchars($r['nama_ruas']) ?></p>
                         </td>
                         <td class="px-4 py-3 text-center font-semibold text-gray-700"><?= $fkm($r['panjang_km']) ?></td>
-                        <!-- Sebelum -->
-                        <td class="px-4 py-3 text-center bg-amber-50/40 border-l border-amber-100">
-                            <?php
-                            $pct = $r['sebelum']['pct_mantap'];
-                            $color = $pct >= 80 ? 'text-green-600' : ($pct >= 60 ? 'text-amber-600' : 'text-red-600');
-                            ?>
-                            <span class="font-bold <?= $color ?>"><?= $pct ?>%</span>
+                        
+                        <!-- Sebelum: Mantap -->
+                        <td class="px-4 py-3 text-center bg-amber-50/30 border-l border-amber-100">
+                            <span x-show="tableUnit === 'pct'" class="font-bold <?= $colorM ?>"><?= $pctM ?>%</span>
+                            <span x-show="tableUnit === 'km'" x-cloak class="font-bold <?= $colorM ?>"><?= $fkm($kmM) ?></span>
                         </td>
-                        <td class="px-4 py-3 text-center bg-amber-50/40">
-                            <span class="font-semibold text-red-600"><?= $fkm($r['sebelum']['rusak_berat_km']) ?></span>
+                        
+                        <!-- Sebelum: Tidak Mantap -->
+                        <td class="px-4 py-3 text-center bg-amber-50/30">
+                            <span x-show="tableUnit === 'pct'" class="font-semibold text-rose-700"><?= $pctTM ?>%</span>
+                            <span x-show="tableUnit === 'km'" x-cloak class="font-semibold text-rose-700"><?= $fkm($kmTM) ?></span>
                         </td>
-                        <!-- Sesudah -->
-                        <td class="px-4 py-3 text-center bg-purple-50/40 border-l border-purple-100">
-                            <?php
-                            $pctS = $r['sesudah']['pct_mantap'];
-                            $delta = round($pctS - $r['sebelum']['pct_mantap'], 1);
-                            $colorS = $pctS >= 80 ? 'text-green-600' : ($pctS >= 60 ? 'text-amber-600' : 'text-red-600');
-                            ?>
-                            <div class="flex items-center justify-center gap-1">
-                                <span class="font-bold <?= $colorS ?>"><?= $pctS ?>%</span>
+                        
+                        <!-- Sesudah: Mantap -->
+                        <td class="px-4 py-3 text-center bg-purple-50/30 border-l border-purple-100">
+                            <div x-show="tableUnit === 'pct'" class="flex items-center justify-center gap-1">
+                                <span class="font-bold <?= $colorMS ?>"><?= $pctMS ?>%</span>
                                 <?php if ($r['ada_penanganan']): ?>
-                                    <span class="text-[10px] font-bold <?= $delta >= 0 ? 'text-green-500' : 'text-red-500' ?>">
-                                        <?= $delta >= 0 ? '↑' : '↓' ?><?= abs($delta) ?>
+                                    <span class="text-[10px] font-bold <?= $deltaPctM >= 0 ? 'text-emerald-600' : 'text-rose-600' ?>">
+                                        <?= $deltaPctM >= 0 ? '↑' : '↓' ?><?= abs($deltaPctM) ?>%
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                            <div x-show="tableUnit === 'km'" x-cloak class="flex items-center justify-center gap-1">
+                                <span class="font-bold <?= $colorMS ?>"><?= $fkm($kmMS) ?></span>
+                                <?php if ($r['ada_penanganan']): ?>
+                                    <span class="text-[10px] font-bold <?= $deltaKmM >= 0 ? 'text-emerald-600' : 'text-rose-600' ?>">
+                                        <?= $deltaKmM >= 0 ? '↑' : '↓' ?><?= abs($deltaKmM) ?>
                                     </span>
                                 <?php endif; ?>
                             </div>
                         </td>
-                        <td class="px-4 py-3 text-center bg-purple-50/40">
-                            <span class="font-semibold text-purple-700"><?= $fkm($r['sesudah']['rusak_berat_km']) ?></span>
-                        </td>
-                        <!-- Penanganan -->
-                        <td class="px-4 py-3 text-center">
-                            <?php if ($r['ada_penanganan']): ?>
-                                <a href="<?= base_url('rekap/prediksi/' . $r['id'] . '?tahun=' . $tahunPenanganan) ?>"
-                                   class="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-100 text-purple-700 rounded-lg text-[11px] font-bold hover:bg-purple-200 transition-colors">
-                                    <?= $r['total_penanganan'] ?> segmen
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                                </a>
-                            <?php else: ?>
-                                <span class="text-gray-400 font-medium">—</span>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-                <!-- Totals Row -->
-                <tfoot class="bg-gray-100 border-t-2 border-gray-300">
-                    <tr>
-                        <td class="px-4 py-3 font-black text-gray-800 text-xs">TOTAL JARINGAN</td>
-                        <td class="px-4 py-3 text-center font-black text-gray-800"><?= $fkm($totalPanjangKm) ?></td>
-                        <td class="px-4 py-3 text-center bg-amber-50/60 border-l border-amber-100">
-                            <span class="font-black text-gray-800"><?= $totalSebelum['pct_mantap'] ?>%</span>
-                        </td>
-                        <td class="px-4 py-3 text-center bg-amber-50/60">
-                            <span class="font-black text-red-700"><?= $fkm($totalSebelum['rusak_berat_km']) ?> km</span>
-                        </td>
-                        <td class="px-4 py-3 text-center bg-purple-50/60 border-l border-purple-100">
-                            <div class="flex items-center justify-center gap-1">
-                                <span class="font-black text-purple-800"><?= $totalSesudah['pct_mantap'] ?>%</span>
-                                <span class="text-xs font-bold <?= $deltaPositif ? 'text-green-600' : 'text-red-500' ?>">
-                                    <?= $deltaPositif ? '↑' : '↓' ?><?= abs($mantapDelta) ?>
-                                </span>
+                        
+                        <!-- Sesudah: Tidak Mantap -->
+                        <td class="px-4 py-3 text-center bg-purple-50/30">
+                            <div x-show="tableUnit === 'pct'" class="flex items-center justify-center gap-1">
+                                <span class="font-semibold text-rose-700"><?= $pctTMS ?>%</span>
+                                <?php if ($r['ada_penanganan']): ?>
+                                    <span class="text-[10px] font-bold <?= $deltaPctTM <= 0 ? 'text-emerald-600' : 'text-rose-600' ?>">
+                                        <?= $deltaPctTM <= 0 ? '↓' : '↑' ?><?= abs($deltaPctTM) ?>%
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                            <div x-show="tableUnit === 'km'" x-cloak class="flex items-center justify-center gap-1">
+                                <span class="font-semibold text-rose-700"><?= $fkm($kmTMS) ?></span>
+                                <?php if ($r['ada_penanganan']): ?>
+                                    <span class="text-[10px] font-bold <?= $deltaKmTM <= 0 ? 'text-emerald-600' : 'text-rose-600' ?>">
+                                        <?= $deltaKmTM <= 0 ? '↓' : '↑' ?><?= abs($deltaKmTM) ?>
+                                    </span>
+                                <?php endif; ?>
                             </div>
                         </td>
-                        <td class="px-4 py-3 text-center bg-purple-50/60">
-                            <span class="font-black text-purple-700"><?= $fkm($totalSesudah['rusak_berat_km']) ?> km</span>
+                        
+                        <!-- Selisih / Gap (Prediksi dikurangi Target/Baseline) -->
+                        <td class="px-4 py-3 text-center bg-indigo-50/30 border-l border-indigo-100">
+                            <div x-show="tableUnit === 'pct'" class="flex flex-col items-center justify-center">
+                                <?php if ($deltaPctM > 0): ?>
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 shadow-2xs">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                                        +<?= number_format($deltaPctM, 1) ?>%
+                                    </span>
+                                <?php elseif ($deltaPctM < 0): ?>
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 shadow-2xs">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                                        <?= number_format($deltaPctM, 1) ?>%
+                                    </span>
+                                <?php else: ?>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-gray-500 bg-gray-100">
+                                        0.0%
+                                    </span>
+                                <?php endif; ?>
+                                <?php if ($r['ada_penanganan']): ?>
+                                    <a href="<?= base_url('rekap/prediksi/' . $r['id'] . '?tahun=' . $tahunPrediksiRaw) ?>"
+                                       class="text-[10px] text-purple-600 hover:text-purple-800 hover:underline mt-0.5 inline-block">
+                                        <?= $r['total_penanganan'] ?> paket
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                            <div x-show="tableUnit === 'km'" x-cloak class="flex flex-col items-center justify-center">
+                                <?php if ($deltaKmM > 0): ?>
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 shadow-2xs">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                                        +<?= $fkm($deltaKmM) ?> km
+                                    </span>
+                                <?php elseif ($deltaKmM < 0): ?>
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 shadow-2xs">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                                        <?= $fkm($deltaKmM) ?> km
+                                    </span>
+                                <?php else: ?>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-gray-500 bg-gray-100">
+                                        0.00 km
+                                    </span>
+                                <?php endif; ?>
+                                <?php if ($r['ada_penanganan']): ?>
+                                    <a href="<?= base_url('rekap/prediksi/' . $r['id'] . '?tahun=' . $tahunPrediksiRaw) ?>"
+                                       class="text-[10px] text-purple-600 hover:text-purple-800 hover:underline mt-0.5 inline-block">
+                                        <?= $r['total_penanganan'] ?> paket
+                                    </a>
+                                <?php endif; ?>
+                            </div>
                         </td>
-                        <td class="px-4 py-3"></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    </div>
-
-    <!-- Panel Detail Angka (untuk verifikasi/debugging) -->
-    <details class="group bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden">
-        <summary class="flex items-center justify-between px-5 py-3.5 cursor-pointer hover:bg-gray-100 transition-colors">
-            <span class="text-xs font-bold text-gray-600 flex items-center gap-2">
-                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                </svg>
-                Angka Detail Jaringan (klik untuk expand)
-            </span>
-            <svg class="w-4 h-4 text-gray-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-            </svg>
-        </summary>
-        <div class="px-5 pb-5 pt-3 border-t border-gray-200">
-            <p class="text-[11px] text-gray-400 mb-3">Angka dalam meter (m), presisi 3 desimal. Berguna untuk verifikasi kalkulasi prediksi.</p>
-            <?php
-            $fmRaw = fn($v) => number_format((float)$v * 1000, 3, ',', '.');
-            $totalMantapSebelum = ($totalSebelum['baik_km'] + $totalSebelum['sedang_km']) * 1000;
-            $totalMantapSesudah = ($totalSesudah['baik_km'] + $totalSesudah['sedang_km']) * 1000;
-            ?>
-            <table class="w-full text-xs border-collapse">
-                <thead>
-                    <tr class="bg-gray-100">
-                        <th class="text-left px-3 py-2 font-bold text-gray-600 rounded-tl-lg">Kondisi</th>
-                        <th class="text-right px-3 py-2 font-bold text-amber-700 bg-amber-50">Saat Ini (m)</th>
-                        <th class="text-right px-3 py-2 font-bold text-purple-700 bg-purple-50">Prediksi (m)</th>
-                        <th class="text-right px-3 py-2 font-bold text-gray-600 rounded-tr-lg">Delta (m)</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    <?php
-                    $kondisiRows = [
-                        ['label' => 'Baik',         'k' => 'baik_km',         'color' => 'text-green-700'],
-                        ['label' => 'Sedang',        'k' => 'sedang_km',       'color' => 'text-yellow-700'],
-                        ['label' => 'Rusak Ringan',  'k' => 'rusak_ringan_km', 'color' => 'text-orange-700'],
-                        ['label' => 'Rusak Berat',   'k' => 'rusak_berat_km',  'color' => 'text-red-700'],
-                    ];
-                    foreach ($kondisiRows as $row):
-                        $sblm   = $totalSebelum[$row['k']] * 1000;
-                        $ssdh   = $totalSesudah[$row['k']] * 1000;
-                        $delta  = $ssdh - $sblm;
-                        $dSign  = $delta >= 0 ? '+' : '';
-                        $dColor = $delta > 0 ? 'text-green-600' : ($delta < 0 ? 'text-red-600' : 'text-gray-400');
-                    ?>
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-3 py-2 font-semibold <?= $row['color'] ?>"><?= $row['label'] ?></td>
-                        <td class="px-3 py-2 text-right font-mono text-gray-700 bg-amber-50/40"><?= number_format($sblm, 3, ',', '.') ?></td>
-                        <td class="px-3 py-2 text-right font-mono text-purple-700 bg-purple-50/40"><?= number_format($ssdh, 3, ',', '.') ?></td>
-                        <td class="px-3 py-2 text-right font-mono font-bold <?= $dColor ?>"><?= $dSign ?><?= number_format($delta, 3, ',', '.') ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
-                <tfoot class="bg-gray-100">
-                    <tr>
-                        <td class="px-3 py-2 font-black text-gray-700">TOTAL MANTAP</td>
-                        <td class="px-3 py-2 text-right font-mono font-black text-amber-700 bg-amber-50"><?= number_format($totalMantapSebelum, 3, ',', '.') ?></td>
-                        <td class="px-3 py-2 text-right font-mono font-black text-purple-700 bg-purple-50"><?= number_format($totalMantapSesudah, 3, ',', '.') ?></td>
-                        <?php $deltaMantap = $totalMantapSesudah - $totalMantapSebelum; ?>
-                        <td class="px-3 py-2 text-right font-mono font-black <?= $deltaMantap >= 0 ? 'text-green-600' : 'text-red-600' ?>">
-                            <?= $deltaMantap >= 0 ? '+' : '' ?><?= number_format($deltaMantap, 3, ',', '.') ?>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="px-3 py-2 font-black text-gray-700">TOTAL JARINGAN</td>
-                        <td class="px-3 py-2 text-right font-mono font-black text-gray-600 bg-amber-50" colspan="3">
-                            <?= number_format($totalPanjangKm * 1000, 3, ',', '.') ?> m
-                        </td>
-                    </tr>
-                </tfoot>
             </table>
-            <p class="text-[10px] text-gray-400 mt-2">
-                💡 <?= number_format($deltaMantap ?? 0, 3, ',', '.') ?> m dari total <?= number_format($totalPanjangKm * 1000, 0, ',', '.') ?> m jaringan
-                = <?= number_format(($deltaMantap ?? 0) / ($totalPanjangKm * 1000 ?: 1) * 100, 4, ',', '.') ?>%
-                perubahan. Dibulatkan ke 1 desimal menghasilkan: <?= round(($deltaMantap ?? 0) / ($totalPanjangKm * 1000 ?: 1) * 100, 1) ?> poin.
-            </p>
-        </div>
-    </details>
-
-    <!-- Catatan / Keterangan Matriks -->
-    <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5">
-        <h4 class="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            Keterangan Matriks Prediksi
-        </h4>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-blue-900">
-            <?php foreach ($pelaksanaLabels as $key => $label): ?>
-            <div class="bg-white/70 rounded-xl px-3 py-2 border border-blue-100">
-                <span class="font-bold"><?= htmlspecialchars($label) ?>:</span>
-                <?php
-                switch ($key) {
-                    case 'pihak_ke3_rigid': echo ' Semua kondisi → Baik - Rigid'; break;
-                    case 'pihak_ke3_aspal': echo ' Semua kondisi → Baik - Aspal'; break;
-                    case 'rutin_uptd': echo ' B/S → Baik. RR/RB → Tidak bisa (peringatan)'; break;
-                    case 'urc_overlay_tanpa_finisher': echo ' B → Baik-Aspal. S/RR/RB → Sedang-Aspal'; break;
-                    case 'urc_overlay_dengan_finisher': echo ' Semua kondisi → Baik - Aspal'; break;
-                    case 'urc_rigid': echo ' Semua kondisi → Baik - Rigid'; break;
-                    case 'urc_base': echo ' B/S/RR → Verifikasi Manual. RB → RB-Agregat/Tanah'; break;
-                }
-                ?>
-            </div>
-            <?php endforeach; ?>
         </div>
     </div>
-
 </div>
+

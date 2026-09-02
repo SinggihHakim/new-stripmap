@@ -25,16 +25,21 @@ class RekapController
      */
     public function kemantapan(): void
     {
+        // Filter tahun — sumber tunggal via TahunHelper
+        $selectedTahun  = TahunHelper::fromRequest();
+        $availableTahun = TahunHelper::getList();
+
+
         $ruasList          = $this->ruasService->getAll();
-        $globalSummary     = $this->stripmapService->getGlobalSummary();
-        $perkerasanSummary = $this->perkerasanService->getGlobalSummary();
+        $globalSummary     = $this->stripmapService->getGlobalSummary(null, $selectedTahun);
+        $perkerasanSummary = $this->perkerasanService->getGlobalSummary(null, $selectedTahun);
         $stats             = build_road_summary_stats($ruasList, $globalSummary, $perkerasanSummary);
 
         // Data Ringkasan Per Ruas Jalan
-        $perRuas = $this->stripmapService->getConditionSummaryPerRuas();
+        $perRuas = $this->stripmapService->getConditionSummaryPerRuas($selectedTahun);
 
         // 1. Rekap Per Kabupaten / Kota
-        $summaryByKabupaten = $this->stripmapService->getSummaryByKabupaten();
+        $summaryByKabupaten = $this->stripmapService->getSummaryByKabupaten($selectedTahun);
         $rekapKabupaten = [];
         foreach ($summaryByKabupaten as $row) {
             $totalP = (float)$row['total_panjang'];
@@ -115,7 +120,7 @@ class RekapController
         }
 
         // 3. Rekap Per Koridor
-        $summaryByKoridor = $this->stripmapService->getSummaryByKoridor();
+        $summaryByKoridor = $this->stripmapService->getSummaryByKoridor($selectedTahun);
         $rekapKoridor = [];
         foreach ($summaryByKoridor as $row) {
             $totalP = (float)$row['total_panjang'];
@@ -135,6 +140,8 @@ class RekapController
 
         $data = array_merge($stats, [
             'title'          => 'Rekapitulasi Kemantapan Jalan',
+            'selectedTahun'  => $selectedTahun,
+            'availableTahun' => $availableTahun,
             'rekapKabupaten' => $rekapKabupaten,
             'rekapUptd'      => $rekapUptd,
             'rekapKoridor'   => $rekapKoridor,
@@ -149,12 +156,17 @@ class RekapController
      */
     public function perkerasan(): void
     {
+        // Filter tahun — sumber tunggal via TahunHelper
+        $selectedTahun  = TahunHelper::fromRequest();
+        $availableTahun = TahunHelper::getList();
+
+
         $ruasList          = $this->ruasService->getAll();
-        $globalSummary     = $this->stripmapService->getGlobalSummary();
-        $perkerasanSummary = $this->perkerasanService->getGlobalSummary();
+        $globalSummary     = $this->stripmapService->getGlobalSummary(null, null);
+        $perkerasanSummary = $this->perkerasanService->getGlobalSummary(null, $selectedTahun);
         $stats             = build_road_summary_stats($ruasList, $globalSummary, $perkerasanSummary);
 
-        // Agregasi Perkerasan Per Ruas
+        // Agregasi Perkerasan Per Ruas (filtered by tahun)
         $ruasPerkerasanList = [];
         foreach ($ruasList as $r) {
             $pkSum = $this->perkerasanService->getSummary($r['id']);
@@ -258,6 +270,8 @@ class RekapController
 
         $data = array_merge($stats, [
             'title'          => 'Rekapitulasi Jenis Perkerasan Jalan',
+            'selectedTahun'  => $selectedTahun,
+            'availableTahun' => $availableTahun,
             'rekapUptd'      => $rekapUptd,
             'rekapKabupaten' => $rekapKabupaten,
             'ruasPerkerasan' => $ruasPerkerasanList,

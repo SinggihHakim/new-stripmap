@@ -32,7 +32,7 @@ $menuGroups = [
                 'label' => 'Dashboard',
                 'icon'  => '<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 00-1 1m-6 0h6"/></svg>',
                 'url'   => '',
-                'match' => ['', 'dashboard/detail', 'dashboard/detail/*'],
+                'match' => ['', 'dashboard', 'dashboard/detail', 'dashboard/detail/*'],
                 'sub'   => []
             ],
         ]
@@ -54,7 +54,8 @@ $menuGroups = [
                 'icon'  => '<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>',
                 'match' => ['stripmap', 'stripmap/*'],
                 'sub'   => [
-                    ['label' => 'Visualisasi Strip Map', 'url' => 'ruas', 'match' => ['stripmap', 'stripmap/*']],
+                    ['label' => 'Visualisasi Strip Map', 'url' => 'ruas',             'match' => ['stripmap', 'stripmap/*']],
+                    ['label' => 'Perbandingan Tahun',    'url' => 'stripmap/compare', 'match' => ['stripmap/compare', 'stripmap/compare/*'], 'badge' => 'Baru'],
                 ]
             ]
         ]
@@ -184,10 +185,14 @@ $menuGroups = [
                                     <?php foreach ($item['sub'] as $sub): ?>
                                         <?php
                                         $isSubActive = false;
-                                        foreach ($sub['match'] as $sm) {
-                                            if ($urlMatches($sm, $currentUrl)) {
-                                                $isSubActive = true;
-                                                break;
+                                        if ($sub['url'] === 'ruas' && str_starts_with($currentUrl, 'stripmap/compare')) {
+                                            $isSubActive = false;
+                                        } else {
+                                            foreach ($sub['match'] as $sm) {
+                                                if ($urlMatches($sm, $currentUrl)) {
+                                                    $isSubActive = true;
+                                                    break;
+                                                }
                                             }
                                         }
                                         ?>

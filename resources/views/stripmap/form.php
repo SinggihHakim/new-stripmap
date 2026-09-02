@@ -1,4 +1,4 @@
-<!-- ============================================================ -->
+﻿<!-- ============================================================ -->
 <!-- Form Tambah / Edit Segmen Strip Map & Perkerasan              -->
 <!-- ============================================================ -->
 
@@ -117,7 +117,7 @@
                         <input type="number" name="perkerasan_rows[0][aspal]" x-model.number="row.aspal" @input="calculateRow()" min="0" step="0.01" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-slate-900" required>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-amber-800 mb-1 flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#92400e"></span> Agregat / Tanah (m)</label>
+                        <label class="block text-xs font-semibold text-amber-800 mb-1 flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#92400e"></span> Kerikil (m)</label>
                         <input type="number" name="perkerasan_rows[0][agregat_tanah]" x-model.number="row.agregatTanah" @input="calculateRow()" min="0" step="0.01" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-amber-700" required>
                     </div>
                     <div>
@@ -255,7 +255,7 @@
                                         <th class="px-3 py-3 w-24">Panjang</th>
                                         <th class="px-3 py-3 text-gray-700">Rigid (m)</th>
                                         <th class="px-3 py-3 text-slate-900">Aspal (m)</th>
-                                        <th class="px-3 py-3 text-amber-800">Agregat / Tanah (m)</th>
+                                        <th class="px-3 py-3 text-amber-800">Kerikil (m)</th>
                                         <th class="px-3 py-3 text-purple-700">Belum Tembus (m)</th>
                                         <th class="px-3 py-3 w-16 text-center">Status</th>
                                         <th class="px-3 py-3 w-16 text-center">Aksi</th>

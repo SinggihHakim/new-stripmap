@@ -91,6 +91,18 @@ class Penanganan
     }
 
     /**
+     * Ambil semua data penanganan hingga tahun tertentu (kumulatif: tahun <= $tahun)
+     */
+    public function getByRuasIdUpTo(int $ruasId, int $tahun): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT * FROM penanganan WHERE ruas_id = :ruas_id AND tahun <= :tahun ORDER BY tahun ASC, sta_awal ASC'
+        );
+        $stmt->execute(['ruas_id' => $ruasId, 'tahun' => $tahun]);
+        return $stmt->fetchAll();
+    }
+
+    /**
      * Ambil satu data penanganan berdasarkan ID
      */
     public function findById(int $id): ?array
