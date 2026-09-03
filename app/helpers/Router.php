@@ -46,13 +46,31 @@ class Router
     {
         if (isset($_GET['url']) && $_GET['url'] !== '') {
             $url = trim($_GET['url'], '/');
+            if (strpos($url, 'public/') === 0) {
+                $url = substr($url, 7);
+            } elseif ($url === 'public') {
+                $url = '';
+            }
+            $url = trim($url, '/');
         } else {
-            // Fallback jika web server (Nginx/LiteSpeed) tidak mem-passing parameter ?url=
+            // Fallback jika web server (Apache/Nginx/LiteSpeed) tidak mem-passing parameter ?url=
             $requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
-            $scriptDir  = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\');
-            if ($scriptDir !== '' && $scriptDir !== '.' && strpos($requestUri, $scriptDir) === 0) {
+            $scriptDir  = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+
+            // Jika script dieksekusi dari subfolder /public (misal: /new-stripmap/public/index.php)
+            if (substr($scriptDir, -7) === '/public') {
+                if (strpos($requestUri, $scriptDir) === 0) {
+                    $requestUri = substr($requestUri, strlen($scriptDir));
+                } else {
+                    $parentDir = substr($scriptDir, 0, -7);
+                    if ($parentDir !== '' && strpos($requestUri, $parentDir) === 0) {
+                        $requestUri = substr($requestUri, strlen($parentDir));
+                    }
+                }
+            } elseif ($scriptDir !== '' && $scriptDir !== '.' && strpos($requestUri, $scriptDir) === 0) {
                 $requestUri = substr($requestUri, strlen($scriptDir));
             }
+
             $url = trim($requestUri, '/');
             if ($url === 'index.php') {
                 $url = '';
