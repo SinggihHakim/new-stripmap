@@ -34,6 +34,11 @@ if (file_exists($envFile)) {
 // Mulai session
 session_start();
 
+// Nonaktifkan cache agar LiteSpeed/browser tidak menyajikan halaman yang sama untuk semua URL
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
+
 // Muat konfigurasi
 $appConfig = require BASE_PATH . '/config/app.php';
 
