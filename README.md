@@ -8,7 +8,8 @@
   <img src="https://cdn.simpleicons.org/alpinedotjs" height="45" alt="Alpine.js" />
   <img src="https://cdn.simpleicons.org/leaflet" height="45" alt="Leaflet.js" />
   <img src="https://cdn.simpleicons.org/chartdotjs" height="45" alt="Chart.js" />
-</p>****
+</p>
+
 
 # BMBK Stripmap
 
