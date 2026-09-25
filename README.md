@@ -1,3 +1,15 @@
+<p align="center">
+  <img src="https://cdn.simpleicons.org/php" height="45" alt="PHP" />
+  <img src="https://cdn.simpleicons.org/mysql" height="45" alt="MySQL" />
+  <img src="https://cdn.simpleicons.org/html5" height="45" alt="HTML5" />
+  <img src="https://cdn.simpleicons.org/css3" height="45" alt="CSS3" />
+  <img src="https://cdn.simpleicons.org/javascript" height="45" alt="JavaScript" />
+  <img src="https://cdn.simpleicons.org/tailwindcss" height="45" alt="Tailwind CSS" />
+  <img src="https://cdn.simpleicons.org/alpinedotjs" height="45" alt="Alpine.js" />
+  <img src="https://cdn.simpleicons.org/leaflet" height="45" alt="Leaflet.js" />
+  <img src="https://cdn.simpleicons.org/chartdotjs" height="45" alt="Chart.js" />
+</p>****
+
 # BMBK Stripmap
 
 Web-based road condition management and visualization system developed during a Praktik Kerja Lapangan (PKL) at Dinas Bina Marga dan Bina Konstruksi (BMBK) Provinsi Lampung.
