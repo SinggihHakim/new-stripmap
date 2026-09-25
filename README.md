@@ -1,17 +1,14 @@
-<p align="center">
-  <img src="https://cdn.simpleicons.org/php" height="45" alt="PHP" />
-  <img src="https://cdn.simpleicons.org/mysql" height="45" alt="MySQL" />
-  <img src="https://cdn.simpleicons.org/html5" height="45" alt="HTML5" />
-  <img src="https://cdn.simpleicons.org/css3" height="45" alt="CSS3" />
-  <img src="https://cdn.simpleicons.org/javascript" height="45" alt="JavaScript" />
-  <img src="https://cdn.simpleicons.org/tailwindcss" height="45" alt="Tailwind CSS" />
-  <img src="https://cdn.simpleicons.org/alpinedotjs" height="45" alt="Alpine.js" />
-  <img src="https://cdn.simpleicons.org/leaflet" height="45" alt="Leaflet.js" />
-  <img src="https://cdn.simpleicons.org/chartdotjs" height="45" alt="Chart.js" />
-</p>
-
-
 # BMBK Stripmap
+
+![PHP](https://img.shields.io/badge/PHP-777BB4?style=flat&logo=php&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=flat&logo=mysql&logoColor=white)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat&logo=tailwindcss&logoColor=white)
+![Alpine.js](https://img.shields.io/badge/Alpine.js-8BC0D0?style=flat&logo=alpinedotjs&logoColor=black)
+![Leaflet.js](https://img.shields.io/badge/Leaflet.js-199900?style=flat&logo=leaflet&logoColor=white)
+![Chart.js](https://img.shields.io/badge/Chart.js-FF6384?style=flat&logo=chartdotjs&logoColor=white)
 
 Web-based road condition management and visualization system developed during a Praktik Kerja Lapangan (PKL) at Dinas Bina Marga dan Bina Konstruksi (BMBK) Provinsi Lampung.
 
